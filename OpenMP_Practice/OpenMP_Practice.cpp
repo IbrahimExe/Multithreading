@@ -1,0 +1,140 @@
+#include <iostream>
+#include <omp.h> // Open MP Library
+
+
+void Example1()
+{
+    //omp_set_num_threads(1000);
+
+#pragma omp parallel
+    {
+        int id = omp_get_thread_num();
+
+        printf(" Hello(%d)", id);
+        printf(" World(%d)\n", id);
+    }
+
+#pragma omp parallel num_threads(1000) // Another way to set the number of threads for a specific parallel region
+    {
+
+    }
+}
+
+//static long numSteps = 10000000;
+//double step = 0.0;
+//int main()
+//{
+//    int i = 0;
+//    double x = 0.0;
+//    double pi = 0.0;
+//    double sum = 0.0;
+//
+//    step = 1.0 / (double)numSteps;
+//    for (i = 0; i < numSteps; i++)
+//    {
+//        x = (i + 0.5) * step;
+//        sum = sum + 4.0 / (1.0 + x * x);
+//    }
+//
+//    pi = step * sum;
+//
+//    //printf("Pi is approximately: %.16f\n", pi);
+//    std::cout << "Pi: " << pi << "\n";
+//
+//    return 0;
+//}
+
+// In-Class Work:
+#define NUM_THREADS 4
+static long numSteps = 10000000;
+double step = 0.0;
+
+void Example2()
+{
+    int numThreads = 0;
+    double x = 0.0;
+    double pi = 0.0;
+    double sum[NUM_THREADS] = { 0.0 };
+    step = 1.0 / (double)numSteps;
+    omp_set_num_threads(NUM_THREADS); // Sets the number of parallel threads
+
+#pragma omp parallel
+    {
+        int i = 0;
+        int id = omp_get_thread_num(); // Get the thread ID
+        int nThreads = omp_get_num_threads(); // Get the total number of threads
+
+        if (id == 0)
+        {
+            numThreads = nThreads;
+        }
+        for (i = id; i < numSteps; i += nThreads)
+        {
+            x = (i + 0.5) * step;
+            sum[id] = sum[id] + (4.0 / (1.0 + x * x));
+        }
+    }
+    for (int i = 0; i < numSteps; ++i)
+    {
+        std::cout << "ID: " << i << " Sum: " << sum[i] << "\n";
+
+        pi += step * sum[i];
+    }
+
+    //printf("Pi is approximately: %.16f\n", pi);
+    std::cout << "Pi: " << pi << "\n";
+
+    //return 0;
+} // Without False Sharing
+
+int main()
+{
+    double pi = 0.0;
+    step = 1.0 / (double)numSteps;
+    omp_set_num_threads(NUM_THREADS); // Sets the number of parallel threads
+
+#pragma omp parallel
+    {
+        double x = 0.0;
+        double sum = 0.0;
+        int i = 0;
+        int id = omp_get_thread_num(); // Get the thread ID
+        int nThreads = omp_get_num_threads(); // Get the total number of threads
+
+        for (i = id; i < numSteps; i += nThreads)
+        {
+            x = (i + 0.5) * step;
+            sum = sum + (4.0 / (1.0 + x * x));
+        }
+        for (i = id; i < numSteps; i += nThreads)
+        {
+            x = (i + 0.5) * step;
+            sum += (4.0 / (1.0 + x * x));
+        }
+#pragma omp critical // Letting thread know 
+        {
+            pi += step * sum;
+        }
+    }
+
+    //printf("Pi is approximately: %.16f\n", pi);
+    std::cout << "Pi: " << pi << "\n";
+
+    //return 0;
+}
+
+// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
+// Debug program: F5 or Debug > Start Debugging menu
+
+// There is a Difference between Debug and Release mode in Visual Studio,
+// Debug mode will run slower than the Release mode, because the Debug mode will include the debug information and the 
+// Release mode will not include the debug related information and optimization, making it faster.
+
+// Race Condition: occurs when multiple threads access shared data concurrently, 
+// and the final outcome depends on the unpredictable timing of their execution. 
+// This leads to data corruption, inconsistent states, 
+// or "lost updates" because threads read old data before others finish updating it. 
+
+// SPMD Patters: Single Program Multiple Data
+// Chefs in a kitchen; instead of one chef preparing everything,
+// multiple chefs work on different dishes simultaneously.
