@@ -87,12 +87,12 @@ void Example2()
     //return 0;
 } // Without False Sharing
 
-int main()
+void Example3()
 {
     double pi = 0.0;
     step = 1.0 / (double)numSteps;
     omp_set_num_threads(NUM_THREADS); // Sets the number of parallel threads
-    
+
     // Current CPU time (in utc)
     std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
 
@@ -128,6 +128,55 @@ int main()
     std::cout << "Execution Time: " << duration << " ms\n";
 
     //return 0;
+}
+
+// Assignment 1: OpenMP PI Computing Assignment
+float SerialPI_Integration(int numSteps)
+{
+    double step = 1.0 / (double)numSteps;
+    double sum = 0.0;
+    double x = 0.0;
+
+    for (int i = 0; i < numSteps; i++)
+    {
+        x = (i + 0.5) * step;
+        sum = sum + (4.0 / (1.0 + x * x));
+    }
+    return step * sum;
+}
+
+float ParallelPI_Integration(int numSteps)
+{
+    double step = 1.0 / (double)numSteps;
+    double pi = 0.0;
+    
+    omp_set_num_threads(NUM_THREADS);
+
+#pragma omp parallel
+    {
+        double x = 0.0;
+        double sum = 0.0;
+        int i = 0;
+        int id = omp_get_thread_num();
+        int nThreads = omp_get_num_threads();
+
+        for (i = id; i < numSteps; i += nThreads)
+        {
+            x = (i + 0.5) * step;
+            sum = sum + (4.0 / (1.0 + x * x));
+        }
+
+#pragma omp critical
+        {
+            pi += step * sum;
+        }
+    }
+    return pi;
+}
+
+int main()
+{
+
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
