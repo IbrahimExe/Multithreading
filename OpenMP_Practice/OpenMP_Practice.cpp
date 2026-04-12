@@ -1,6 +1,6 @@
 #include <iostream>
 #include <omp.h> // Open MP Library
-
+#include <chrono> // For measuring time
 
 void Example1()
 {
@@ -92,6 +92,9 @@ int main()
     double pi = 0.0;
     step = 1.0 / (double)numSteps;
     omp_set_num_threads(NUM_THREADS); // Sets the number of parallel threads
+    
+    // Current CPU time (in utc)
+    std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
 
 #pragma omp parallel
     {
@@ -119,6 +122,10 @@ int main()
 
     //printf("Pi is approximately: %.16f\n", pi);
     std::cout << "Pi: " << pi << "\n";
+
+    std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now();
+    int duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+    std::cout << "Execution Time: " << duration << " ms\n";
 
     //return 0;
 }
