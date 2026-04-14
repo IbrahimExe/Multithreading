@@ -90,24 +90,113 @@ void MonteCarlo()
     std::cout << std::setprecision(20) << "Pi: " << pi << "NumHits: " << nCirc << "\n";
 }
 
-int main()
+void Example4_Sections()
 {
     omp_set_num_threads(4);
 
 #pragma omp parallel
     {
-#pragma omp sections
+#pragma omp sections // adding 'nowait' here will allow the threads to continue without waiting for all sections to finish
         {
 #pragma omp section
             {
-
+                int id = omp_get_thread_num();
+                for (int i = 0; i < 10; ++i)
+                {
+                    std::cout << "Section 1 for ID: " << id << "Index: " << i << "\n";
+                }
             }
 #pragma omp section
             {
-
+                int id = omp_get_thread_num();
+                for (int i = 0; i < 10; ++i)
+                {
+                    std::cout << "Section 2 for ID: " << id << "Index: " << i << "\n";
+                }
+            }
+#pragma omp section
+            {
+                int id = omp_get_thread_num();
+                for (int i = 0; i < 10; ++i)
+                {
+                    std::cout << "Section 3 for ID: " << id << "Index: " << i << "\n";
+                }
+            }
+#pragma omp section
+            {
+                int id = omp_get_thread_num();
+                for (int i = 0; i < 10; ++i)
+                {
+                    std::cout << "Section 4 for ID: " << id << "Index: " << i << "\n";
+                }
+            }
+#pragma omp section
+            {
+                int id = omp_get_thread_num();
+                for (int i = 0; i < 10; ++i)
+                {
+                    std::cout << "Section 5 for ID: " << id << "Index: " << i << "\n";
+                }
             }
         }
     }
 
+    std::cout << "All threads are done!\n";
+}
+
+struct Matrix
+{
+    float m[16];
+    Matrix()
+    {
+        for (int i = 0; i < 16; ++i)
+        {
+            m[i] = 0;
+            if (i == 0 || i == 5 || i == 10 || i == 15)
+            {
+                m[i] = 1;
+            }
+        }
+    }
+};
+void MatrixMul(Matrix& a, Matrix& b, Matrix& result)
+{
+    // 4x4 Matrix
+    int m = 4; // Number of rows in A and C
+    int n = 4; // Number of columns in B and C
+#pragma omp parallel for
+    for (int i = 0; i < n; ++i)
+    {
+#pragma omp critical
+        std::cout << "Thread: " << omp_get_thread_num() << "Index: " << i << "\n";
+        for (int j = 0; j < m; ++j)
+        {
+            float cell = 0.0f;
+            for (int k = 0; k < m; ++k)
+            {
+                int aIndex = k + (i * m); // Row-major order
+                int bIndex = j + (k * n); // Row-major order
+                cell += a.m[aIndex] * b.m[bIndex];
+            }
+            int resIndex = j + (i * m);
+            result.m[resIndex] = cell;
+        }
+    }
+}
+
+int main()
+{
+    Matrix a;
+    Matrix b;
+    Matrix result;
+    MatrixMul(a, b, result);
+    for (int i = 0; i < 16; ++i)
+    {
+        std::cout << result.m[i] << " ";
+        if ((i + 1) % 4 == 0)
+        {
+            std::cout << "\n";
+        }
+    }
     return 0;
 }
