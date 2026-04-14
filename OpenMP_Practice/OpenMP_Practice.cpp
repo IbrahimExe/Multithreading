@@ -183,42 +183,42 @@ int main()
     start = std::chrono::steady_clock::now();
     float pi = SerialPI_Integration(10000);
     end = std::chrono::steady_clock::now();
-    int duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    int duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     std::cout << "Serial PI (n= 10,000) = " << pi << ", Time: " << duration << " ms\n";
 
     // Serial: n = 100 000
     start = std::chrono::steady_clock::now();
     pi = SerialPI_Integration(100000);
     end = std::chrono::steady_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     std::cout << "Serial PI (n=100,000) = " << pi << ", Time: " << duration << " ms\n";
 
     // Serial: n = 1 000 000
     start = std::chrono::steady_clock::now();
     pi = SerialPI_Integration(1000000);
     end = std::chrono::steady_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     std::cout << "Serial PI (n=1,000,000) = " << pi << ", Time: " << duration << " ms\n\n";
 
     // Parallel: n = 10 000
     start = std::chrono::steady_clock::now();
     pi = ParallelPI_Integration(10000);
     end = std::chrono::steady_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     std::cout << "Parallel PI (n=10,000) = " << pi << ", Time: " << duration << " ms\n";
 
     // Parallel: n = 100 000
     start = std::chrono::steady_clock::now();
     pi = ParallelPI_Integration(100000);
     end = std::chrono::steady_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     std::cout << "Parallel PI (n=100,000) = " << pi << ", Time: " << duration << " ms\n";
 
     // Parallel: n = 1 000 000
     start = std::chrono::steady_clock::now();
     pi = ParallelPI_Integration(1000000);
     end = std::chrono::steady_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     std::cout << "Parallel PI (n= 1,000,000) = " << pi << ", Time: " << duration << " ms\n";
 
     return 0;
