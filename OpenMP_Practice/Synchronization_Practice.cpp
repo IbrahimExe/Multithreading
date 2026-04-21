@@ -308,71 +308,71 @@ void Print5x5(Matrix const& M, const char* name)
     std::cout << "\n";
 }
 
-int main()
-{
-    /*
-    Matrix a;
-    Matrix b;
-    Matrix result;
-    MatrixMul(a, b, result);
-    for (int i = 0; i < 16; ++i)
-    {
-        std::cout << result.m[i] << " ";
-        if ((i + 1) % 4 == 0)
-        {
-            std::cout << "\n";
-        }
-    }
-    return 0;
-    */
-
-    // Create matrices: using small size for testing
-    int size = 512;
-    Matrix A(size, size);
-    Matrix B(size, size);
-    Matrix resultSerial(size, size);
-    Matrix resultParallel(size, size);
-
-    // Initialize with random data
-    A.init();
-    B.init();
-
-    auto start = std::chrono::steady_clock::now(); //time measurement
-    auto end = std::chrono::steady_clock::now();
-
-    // Serial multiplication
-    start = std::chrono::steady_clock::now(); // Start time measurement
-    SerialMatrixMult(A, B, &resultSerial);
-    end = std::chrono::steady_clock::now();
-    long serialTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
-    std::cout << "Serial Matrix Multiplication Time: " << serialTime << " ms\n\n";
-    Print5x5(resultSerial, "Serial Result");
-
-    // Parallel multiplication
-    start = std::chrono::steady_clock::now();
-    ParallelMatrixMult(A, B, &resultParallel);
-    end = std::chrono::steady_clock::now();
-    long parallelTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
-    std::cout << "Parallel Matrix Multiplication Time: " << parallelTime << " ms\n\n";
-    Print5x5(resultParallel, "Parallel Result");
-
-    // Compare results
-    bool same = true;
-    for (int i = 0; i < size && same; ++i)
-    {
-        for (int j = 0; j < size && same; ++j)
-        {
-            if (resultSerial.data[i][j] != resultParallel.data[i][j])
-            {
-                same = false;
-            }
-        }
-    }
-
-    std::cout << "Parallel is roughly ~" << (float)serialTime / parallelTime << "x faster \n";
-    std::cout << "with a difference of " << serialTime - parallelTime << " ms\n";
-
-    return 0;
-}
+//int main()
+//{
+//    /*
+//    Matrix a;
+//    Matrix b;
+//    Matrix result;
+//    MatrixMul(a, b, result);
+//    for (int i = 0; i < 16; ++i)
+//    {
+//        std::cout << result.m[i] << " ";
+//        if ((i + 1) % 4 == 0)
+//        {
+//            std::cout << "\n";
+//        }
+//    }
+//    return 0;
+//    */
+//
+//    // Create matrices: using small size for testing
+//    int size = 512;
+//    Matrix A(size, size);
+//    Matrix B(size, size);
+//    Matrix resultSerial(size, size);
+//    Matrix resultParallel(size, size);
+//
+//    // Initialize with random data
+//    A.init();
+//    B.init();
+//
+//    auto start = std::chrono::steady_clock::now(); //time measurement
+//    auto end = std::chrono::steady_clock::now();
+//
+//    // Serial multiplication
+//    start = std::chrono::steady_clock::now(); // Start time measurement
+//    SerialMatrixMult(A, B, &resultSerial);
+//    end = std::chrono::steady_clock::now();
+//    long serialTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+//
+//    std::cout << "Serial Matrix Multiplication Time: " << serialTime << " ms\n\n";
+//    Print5x5(resultSerial, "Serial Result");
+//
+//    // Parallel multiplication
+//    start = std::chrono::steady_clock::now();
+//    ParallelMatrixMult(A, B, &resultParallel);
+//    end = std::chrono::steady_clock::now();
+//    long parallelTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+//
+//    std::cout << "Parallel Matrix Multiplication Time: " << parallelTime << " ms\n\n";
+//    Print5x5(resultParallel, "Parallel Result");
+//
+//    // Compare results
+//    bool same = true;
+//    for (int i = 0; i < size && same; ++i)
+//    {
+//        for (int j = 0; j < size && same; ++j)
+//        {
+//            if (resultSerial.data[i][j] != resultParallel.data[i][j])
+//            {
+//                same = false;
+//            }
+//        }
+//    }
+//
+//    std::cout << "Parallel is roughly ~" << (float)serialTime / parallelTime << "x faster \n";
+//    std::cout << "with a difference of " << serialTime - parallelTime << " ms\n";
+//
+//    return 0;
+//}
