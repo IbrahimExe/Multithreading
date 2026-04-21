@@ -1,8 +1,7 @@
-// Concurrency.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include <iostream>
 #include <future> // for std::async
+#include <thread> // for std::thread
+#include <sstream> // for std::stringstream
 
 void WriteMessage(const std::string& message)
 {
@@ -43,32 +42,202 @@ void Example3()
 
     WriteMessage("Hello from the MAIN thread!\n");
 
-    getchar(); // Basically wait for an input(Enter) before proceeding
+    //getchar(); // Basically wait for an input(Enter) before proceeding
+    (void)getchar(); // To prevent unused function warning,
+    // or use when you don't care about the return value of a function
 
     f.wait();
+}
+
+int FindTheAnswer()
+{
+    return 42;
+}
+
+void Example4()
+{
+    auto f = std::async(FindTheAnswer);
+
+    std::cout << "The meaning of life is: " << f.get() << "\n"; // get() will block until the result is ready, and then return the value.
+}
+
+std::string CopyString(const std::string& str)
+{
+    return str;
+}
+
+void Example5()
+{
+    // Passing parameters to async tasks
+    std::string s = "Hello, World!";
+    auto f = std::async(std::launch::async, CopyString, std::ref(s));
+    // s = just the string
+    
+    // std::ref(s) = reference to the string, so the async task will capture the reference to 's' 
+    // and will see any changes made to 's' after the async task is launched.
+
+    // auto f = std::async(std::launch::deferred, [&s]() { return CopyString(s); }); 
+    // = capture the reference to 's' in a lambda function, 
+    // and the async task will execute the lambda function when get() or wait() is called, 
+    // so it will see the value of 's' at that time.
+
+    s = "Goodbye, World!"; // Modifying the original string after launching the async task
+    std::cout << f.get() << "\n"; 
+    // This will print "Hello, World!" because the async task 
+    // captures the value of 's' at the time it was launched, 
+    // not the reference to 's'.
+}
+
+void FindThePromiseAnswer(std::promise<int>* p)
+{
+    p->set_value(42); // Set the value of the promise, which will make it available to the future.
+}
+
+void Example6()
+{
+    std::promise<int> p; // a promise is an object that can be used to store a value that will be available in the future.
+    auto f = p.get_future();
+    std::thread t(FindThePromiseAnswer, &p); // Pass the promise by reference to the thread function
+    std::cout << "the answer is: " << f.get() << "\n";
+    // This will block until the promise is fulfilled and the value is set.
+
+    t.join(); // Wait for the thread to finish before exiting the program
+}
+
+void Example7()
+{
+    std::packaged_task<int()> task(FindTheAnswer); // Wrap the function in a packaged_task
+    auto f = task.get_future(); // Get the future associated with the task
+    std::thread t(std::move(task)); // Move the task into a new thread and execute it
+    std::cout << "The meaning of life is: " << f.get() << "\n"; // Wait for the result and print it
+    t.join(); // when using threads, its generally t, wait for it to join back to main
+}
+
+void WaitForNotify(int id, std::shared_future<int> sf) // Wait for other threads
+{
+    std::ostringstream os;
+    os << "Thread " << id << " is waiting for the signal...\n";
+    std::cout << os.str();
+    os.str(""); // Clear the stringstream for reuse
+    os << "Thread " << id << " woken, val = " << sf.get() << "\n";
+    std::cout << os.str();
+}
+
+void Example8()
+{
+    // Basically, thread 2 will wait until Enter is pressed,
+    // and then both thread 1 and thread 2 will wake up and print their messages.
+    std::promise<int> p;
+    auto sf = p.get_future().share(); // Convert the future to a shared_future,
+    // which can be shared among multiple threads
+
+    std::thread t1(WaitForNotify, 1, sf); // Thread 1 will wait for the signal
+    std::thread t2(WaitForNotify, 2, sf); // Thread 2 will also wait for the signal
+
+    std::cout << "Waiting\n";
+    std::cin.get(); // Wait for user input before sending the signal
+    p.set_value(42); // Set the value of the promise, which will wake up both threads
+    t2.join(); // Wait for thread 2 to finish
+    t1.join(); // Wait for thread 1 to finish
+}
+
+std::mutex myMutex;
+void MyFunctionThatUsesMutex()
+{
+    /*
+    myMutex.lock(); // Lock the mutex to protect the critical section
+    std::cout << "In My Function That Uses Mutex\n";
+    myMutex.unlock(); // Unlock the mutex after the critical section is done
+    */
+
+    std::lock_guard<std::mutex> myGuard(myMutex); // Lock the mutex when the lock_guard is created,
+    // and automatically unlock it when the lock_guard goes out of scope
+    std::cout << "In My Function That Uses Mutex with lock_guard\n";
+}
+
+void Example9()
+{
+    myMutex.lock(); // Lock the mutex before calling the function that uses it
+    std::thread t(MyFunctionThatUsesMutex); // Start a new thread that will call the function that uses the mutex
+    for (int i = 0; i < 5; ++i)
+    {
+        std::cout << "In Main Thread\n";
+        std::this_thread::sleep_for(std::chrono::seconds(1)); // Sleep for a while to simulate work
+    }
+
+    myMutex.unlock(); // Unlock the mutex after the main thread is done with its work
+    t.join();
+}
+
+void FunctionThatUsesUniqueLock(int i)
+{
+    std::unique_lock<std::mutex> guard(myMutex); // Lock the mutex when the unique_lock is created
+    std::cout << "In Function That Uses Unique Lock (" << i << ")\n";
+    
+    guard.unlock(); // Manually unlock the mutex before the function ends
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    guard.lock(); // Lock the mutex again before the function ends
+    std::cout << "In function (" << i << ") AGAIN\n";
+}
+
+void Example10()
+{
+    std::unique_lock<std::mutex> guard(myMutex); // Lock the mutex in the main thread
+    std::thread t1(FunctionThatUsesUniqueLock, 1); // Start a new thread that will call the function that uses the unique_lock
+    std::thread t2(FunctionThatUsesUniqueLock, 2); // Start another thread that will call the function that uses the unique_lock
+
+    std::cout << "In Main Thread\n";
+
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    guard.unlock(); // Unlock the mutex to allow the other threads to proceed
+    t1.join(); // Wait for thread 1 to finish
+    t2.join(); // Wait for thread 2 to finish
+}
+
+class Account
+{
+public:
+    Account(int balance) : balance(balance) {}
+    friend void Transfer(Account& from, Account& to, int amount)
+    {
+        //std::lock_guard<std::mutex> lockFrom(from.mutex); // Lock the mutex of the 'from' account
+        //std::lock_guard<std::mutex> lockTo(to.mutex); // Lock the mutex of the 'to' account
+        //from.balance -= amount; // Transfer the amount from the 'from' account
+        //to.balance += amount; // Transfer the amount to the 'to' account
+
+        std::lock(from.mutex, to.mutex); // Lock both mutexes without risking deadlock
+        std::lock_guard<std::mutex> lockFrom(from.mutex, std::adopt_lock); // Adopt the lock for the 'from' account
+        std::lock_guard<std::mutex> lockTo(to.mutex, std::adopt_lock); // Adopt the lock for the 'to' account
+        from.balance -= amount; // Transfer the amount from the 'from' account
+        to.balance += amount; // Transfer the amount to the 'to' account
+    }
+
+    int GetBalance() const
+    {
+        return balance; // for printing purposes
+    }
+
+private:
+    std::mutex mutex;
+    int balance = 0;
+};
+
+void Example11()
+{
+    // Locking multiple mutexes
 }
 
 int main()
 {
-    // Default is std::launch::async, which means it will run the function in a separate thread immediately.
-    // std::launch::async = launch when the async is created
-    // std::launch::deferred = launch when the info is requested (when you call get() or wait())
-    auto f = std::async(std::launch::deferred, WriteMessage, "Hello from another threaaaadd! (std::async)\n");
-    
-    WriteMessage("Hello from the main thread!\n");
+    Account ibrahim(100000000);
+    Account santi(10);
+    Transfer(ibrahim, santi, 10);
 
-    getchar(); // Basically wait for an input(Enter) before proceeding
+    std::cout << "Ibrahim's balance: " << ibrahim.GetBalance() << "\n";
+    std::cout << "Santi's balance: " << santi.GetBalance() << "\n";
 
-    f.wait();
+    return 0;
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
 // Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
