@@ -2,6 +2,7 @@
 #include <future> // for std::async
 #include <thread> // for std::thread
 #include <sstream> // for std::stringstream
+#include "LockFreeStack.h"
 
 void WriteMessage(const std::string& message)
 {
@@ -225,16 +226,18 @@ private:
 void Example11()
 {
     // Locking multiple mutexes
-}
-
-int main()
-{
     Account ibrahim(100000000);
     Account santi(10);
     Transfer(ibrahim, santi, 10);
 
     std::cout << "Ibrahim's balance: " << ibrahim.GetBalance() << "\n";
     std::cout << "Santi's balance: " << santi.GetBalance() << "\n";
+}
+
+
+
+int main()
+{
 
     return 0;
 }
