@@ -2,6 +2,10 @@
 #include <future> // for std::async
 #include <thread> // for std::thread
 #include <sstream> // for std::stringstream
+#include <chrono>
+#include <random>
+#include <vector>
+#include <mutex>
 #include "LockFreeStack.h"
 
 void WriteMessage(const std::string& message)
@@ -234,10 +238,80 @@ void Example11()
     std::cout << "Santi's balance: " << santi.GetBalance() << "\n";
 }
 
+// Lock Free Stack Example
+std::mutex gPrintLock; // used for serializing output stream
+bool gDone = false;
+LockFreeStack<unsigned> gErrorCodes; // stack of error codes issues by running threads
 
+// Run by logger threads, which pop errors from the stack & process them (print them)
+void LoggerFunction()
+{
+    // print a startup message
+    std::unique_lock<std::mutex> lock(gPrintLock);
+    std::cout << "[Logger]\t running...\n";
+    lock.unlock();
+    // While there are error codes in the stack, process them
+    while (!gDone)
+    {
+        if (!gErrorCodes.Empty())
+        {
+            auto code = gErrorCodes.Pop();
+            if (code != nullptr) // If there IS something
+            {
+                lock.lock(); // lock to prevent other threads from accessing this
+                std::cout << "[Logger]\t processing error code: " << *code << "\n";
+                lock.unlock(); // unlock to make this section available again
+            }
+        }
+    }
+}
+
+// Run by worker threads, which runs processes that may trigger error codes
+void WorkerFunction(int id, std::mt19937& randGen) // mt19937 is a random number generator
+{
+    // Print a startup message
+    std::unique_lock<std::mutex> lock(gPrintLock);
+    std::cout << "[Worker " << id << "]\t running...\n";
+    lock.unlock();
+
+    while (!gDone)
+    {
+        // Simulate some work
+        std::this_thread::sleep_for(std::chrono::seconds(1 + randGen() % 5)); // Sleep for a random time between 1 and 5 seconds
+        // Simulate an error
+        unsigned errorCode = id * 100 + (randGen() % 50); // Generate a random error code based on the worker ID
+        gErrorCodes.Push(errorCode); // Push the error code onto the stack
+    }
+}
 
 int main()
 {
+    std::mt19937 randomGenerator((unsigned)std::chrono::system_clock::now().time_since_epoch().count()); // Random number generator seeded with the current time
+    std::vector<std::thread> threads;
+
+    // Create all logger functions and add to vector
+    for (int i = 0; i < 5; ++i)
+    {
+        threads.push_back(std::thread(LoggerFunction));
+    }
+
+    // Create all worker functions and add to vector
+    for (int i = 0; i < 5; ++i)
+    {
+        // Add in parameters (id) as well as reference to the random generator
+        //  with the reference, as it is being called, it updates
+        //   otherwise each thread will have the exact same random outcomes
+        threads.push_back(std::thread(WorkerFunction, i + 1, std::ref(randomGenerator)));
+    }
+
+    // Simulate running the main thread / application for 30 seconds
+    std::this_thread::sleep_for(std::chrono::seconds(30));
+
+    gDone = true;
+    for (auto& t : threads)
+    {
+        t.join(); // Wait for ALL threads to finish before exiting the program
+    }
 
     return 0;
 }

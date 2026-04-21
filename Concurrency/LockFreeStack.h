@@ -9,7 +9,7 @@ class LockFreeStack
 private:
     struct Node
     {
-        Node(const T& data)
+        Node(T const& data)
             : data(std::make_shared<T>(data))
         {
 
@@ -29,9 +29,9 @@ public:
         return mHead.load() == nullptr;
     }
     
-    void Push(const T& data)
+    void Push(T const& data)
     {
-        const Node* newNode(new Node(data));
+        Node* const newNode(new Node(data));
         newNode->next = mHead.load(); // Set the new node's next pointer to the current head of the stack
         while (!mHead.compare_exchange_weak(newNode->next, newNode)) // Attempt to update the head of the stack to the new node
         {
@@ -77,7 +77,7 @@ public:
         }
         else
         {
-            ChainPendingNode(oldHead);
+            ChainPendingANode(oldHead);
             --mThreadsInPop;
         }
     }
@@ -85,7 +85,7 @@ public:
     void ChainPendingNodes(Node* nodes)
     {
         Node* last(nodes);
-        while (const Node* next = last->next)
+        while (Node* const next = last->next)
         {
             last = next;
         }
