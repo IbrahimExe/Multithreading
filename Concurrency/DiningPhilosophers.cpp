@@ -25,6 +25,8 @@ Also make sure you use lock guard or unique lock for mutex management.
 #include <mutex>
 #include <atomic>
 #include <chrono>
+#include <vector>
+#include <sstream>
 
 class Fork
 {
@@ -109,5 +111,45 @@ private:
 int main()
 {
     std::cout << "Dining Philosophers Dilemma\n";
+
+    // Create 5 forks
+    std::vector<Fork> forks;
+    for (int i = 0; i < 5; ++i)
+    {
+        forks.push_back(Fork(i));
+    }
+
+    // Create 5 philosophers
+    std::vector<Philosopher> philosophers;
+    for (int i = 0; i < 5; ++i)
+    {
+        philosophers.push_back(Philosopher(i, forks[i], forks[(i + 1) % 5]));
+    }
+
+    // Create threads for each philosopher
+    std::vector<std::thread> threads;
+    for (int i = 0; i < 5; ++i)
+    {
+        threads.push_back(std::thread(&Philosopher::run, &philosophers[i]));
+    }
+
+    // Let them run for 60 seconds
+    std::this_thread::sleep_for(std::chrono::seconds(60));
+
+    // Signal threads to stop
+    running = false;
+
+    // Wait for all threads to finish
+    for (auto& t : threads)
+    {
+        t.join();
+    }
+
+    std::cout << "\nDone! Philosopher stats:\n";
+    for (int i = 0; i < 5; ++i)
+    {
+        std::cout << "Philosopher " << i << " ate " << philosophers[i].getEatCount() << " times\n";
+    }
+
     return 0;
 }
