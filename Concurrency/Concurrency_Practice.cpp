@@ -284,61 +284,41 @@ void WorkerFunction(int id, std::mt19937& randGen) // mt19937 is a random number
     }
 }
 
-class Fork
-{
-public:
-    Fork(int id) : forkId(id) {}
-
-    std::mutex& getMutex()
-    {
-        return forkMutex;
-    }
-
-    int getId() const
-    {
-        return forkId;
-    }
-
-private:
-    int forkId;
-    std::mutex forkMutex;
-};
-
 void Assignment_DiningPhilosophers()
 {
-    std::mt19937 randomGenerator((unsigned)std::chrono::system_clock::now().time_since_epoch().count()); // Random number generator seeded with the current time
-    std::vector<std::thread> threads;
 
-    // Create all logger functions and add to vector
-    for (int i = 0; i < 5; ++i)
-    {
-        threads.push_back(std::thread(LoggerFunction));
-    }
-
-    // Create all worker functions and add to vector
-    for (int i = 0; i < 5; ++i)
-    {
-        // Add in parameters (id) as well as reference to the random generator
-        //  with the reference, as it is being called, it updates
-        //   otherwise each thread will have the exact same random outcomes
-        threads.push_back(std::thread(WorkerFunction, i + 1, std::ref(randomGenerator)));
-    }
-
-    // Simulate running the main thread / application for 30 seconds
-    std::this_thread::sleep_for(std::chrono::seconds(30));
-
-    gDone = true;
-    for (auto& t : threads)
-    {
-        t.join(); // Wait for ALL threads to finish before exiting the program
-    }
 }
 
-int main()
-{
-
-    return 0;
-}
+//int main()
+//{
+//    std::mt19937 randomGenerator((unsigned)std::chrono::system_clock::now().time_since_epoch().count()); // Random number generator seeded with the current time
+//    std::vector<std::thread> threads;
+//
+//    // Create all logger functions and add to vector
+//    for (int i = 0; i < 5; ++i)
+//    {
+//        threads.push_back(std::thread(LoggerFunction));
+//    }
+//
+//    // Create all worker functions and add to vector
+//    for (int i = 0; i < 5; ++i)
+//    {
+//        // Add in parameters (id) as well as reference to the random generator
+//        //  with the reference, as it is being called, it updates
+//        //   otherwise each thread will have the exact same random outcomes
+//        threads.push_back(std::thread(WorkerFunction, i + 1, std::ref(randomGenerator)));
+//    }
+//
+//    // Simulate running the main thread / application for 30 seconds
+//    std::this_thread::sleep_for(std::chrono::seconds(30));
+//
+//    gDone = true;
+//    for (auto& t : threads)
+//    {
+//        t.join(); // Wait for ALL threads to finish before exiting the program
+//    }
+//    return 0;
+//}
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
 // Debug program: F5 or Debug > Start Debugging menu

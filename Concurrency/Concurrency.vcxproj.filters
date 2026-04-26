@@ -18,6 +18,9 @@
     <ClCompile Include="Concurrency_Practice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DiningPhilosophers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LockFreeStack.h">
