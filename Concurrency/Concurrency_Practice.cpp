@@ -284,7 +284,27 @@ void WorkerFunction(int id, std::mt19937& randGen) // mt19937 is a random number
     }
 }
 
-int main()
+class Fork
+{
+public:
+    Fork(int id) : forkId(id) {}
+
+    std::mutex& getMutex()
+    {
+        return forkMutex;
+    }
+
+    int getId() const
+    {
+        return forkId;
+    }
+
+private:
+    int forkId;
+    std::mutex forkMutex;
+};
+
+void Assignment_DiningPhilosophers()
 {
     std::mt19937 randomGenerator((unsigned)std::chrono::system_clock::now().time_since_epoch().count()); // Random number generator seeded with the current time
     std::vector<std::thread> threads;
@@ -312,6 +332,10 @@ int main()
     {
         t.join(); // Wait for ALL threads to finish before exiting the program
     }
+}
+
+int main()
+{
 
     return 0;
 }
