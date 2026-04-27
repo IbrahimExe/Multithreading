@@ -27,6 +27,8 @@ Also make sure you use lock guard or unique lock for mutex management.
 #include <chrono>
 #include <vector>
 #include <sstream>
+#include <future> // for std::async
+#include <random>
 
 class Fork
 {
