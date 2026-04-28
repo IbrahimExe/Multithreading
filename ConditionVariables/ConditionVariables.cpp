@@ -167,7 +167,7 @@ float RandFloat()
     return val;
 }
 
-int main()
+void GameLoopExample()
 {
     std::cout << "Game Simulation!\n";
 
@@ -199,12 +199,28 @@ int main()
     system("pause"); // Wait for user input before terminating the simulation
     simulation.Terminate(); // flag the thread to end
     render.Terminate();
-    
+
     renderThread.join();
     simThread.join();
+}
+
+int main()
+{
+    
 
     return 0;
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
 // Debug program: F5 or Debug > Start Debugging menu
+
+/* Class Notes
+
+Deadlock real life example:
+Salmon has the contract but needs the pen held by Ibrahim.Ibrahim has the pen but needs the contract held by Salmon to sign it.
+Neither will release their item until they have both.
+
+The example in the GameLoopExample function is an example of a frame based game loop, 
+where the game updates and renders at a fixed rate (e.g., 60 FPS).
+
+*/
