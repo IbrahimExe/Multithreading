@@ -6,6 +6,7 @@
 #include <thread>
 #include <chrono>
 #include <random>
+#include <future>
 
 /*
 The Game Engine​
@@ -264,18 +265,145 @@ void GameLoopExample()
 // thread safe flag to indicate data input is finished
 std::atomic_bool done = false;
 
-int totalMin = INT_MIN;
-int totalMax = INT_MAX;
-
 struct CircularBuffer
 {
+    int* buffer;
+    int capacity;
 
+    int frontIndex;
+    int rearIndex;
+    int count;
+    std::mutex mutex;
+    std::condition_variable notEmpty;
+    std::condition_variable notFull;
+
+    CircularBuffer(int cap)
+        : capacity(cap)
+        , frontIndex(0)
+        , rearIndex(0)
+        , count(0)
+        , buffer(new int[cap])
+    {
+
+    }
+
+    void Push(int num)
+    {
+        std::unique_lock<std::mutex> lk(mutex);
+        // waits until condition is met to trigger
+        notFull.wait(lk, [this]() { return count != capacity; });
+        buffer[rearIndex] = num;
+        rearIndex = (rearIndex + 1) % capacity;
+        ++count;
+
+        lk.unlock();
+        // trigger sending a message it is not empty
+        notEmpty.notify_one();
+    }
+    int Pop()
+    {
+        std::unique_lock<std::mutex> lk(mutex);
+        notEmpty.wait(lk, [this]() { return count > 0; });
+        int data = buffer[frontIndex];
+        frontIndex = (frontIndex + 1) % capacity;
+        --count;
+
+        lk.unlock();
+        notFull.notify_one();
+        return data;
+    }
 };
+
+std::mutex bufferMutex;
+int totalMin = INT_MAX;
+int totalMax = INT_MIN;
+void ConsumerFunction(CircularBuffer& buffer, int id)
+{
+    int localMin = INT_MAX;
+    int localMax = INT_MIN;
+    for (int i = 0; i < 950; ++i)
+    {
+        int value = buffer.Pop();
+        localMin = std::min(localMin, value);
+        localMax = std::max(localMax, value);
+    }
+    {
+        std::lock_guard<std::mutex> lk(bufferMutex);
+        std::cout << "Consumer " << id << ": local max [" << localMax << "] local min [" << localMin << "]\n";
+        totalMin = std::min(localMin, totalMin);
+        totalMax = std::max(localMax, totalMax);
+    }
+}
+
+void ProducerFunction(CircularBuffer& buffer, int id)
+{
+    auto sleepTime = std::chrono::milliseconds(10);
+    std::mt19937 randomGenerator((unsigned int)std::chrono::system_clock::now().time_since_epoch().count());
+    for (int i = 0; i < 1000; ++i)
+    {
+        buffer.Push(randomGenerator() % 100000);
+        std::this_thread::sleep_for(sleepTime);
+    }
+}
+
+void Exercise2()
+{
+    CircularBuffer dataBuffer(400);
+    std::thread consumer1(ConsumerFunction, std::ref(dataBuffer), 1);
+    std::thread consumer2(ConsumerFunction, std::ref(dataBuffer), 2);
+    std::thread producer1(ProducerFunction, std::ref(dataBuffer), 1);
+    std::thread producer2(ProducerFunction, std::ref(dataBuffer), 2);
+
+    producer2.join();
+    producer1.join();
+    consumer2.join();
+    consumer1.join();
+
+    std::cout << "Total Max: [" << totalMax << "] Total Min: [" << totalMin << "]\n";
+}
+
+struct Result
+{
+    int minValue = INT_MAX;
+    int maxValue = INT_MIN;
+};
+
+Result ConsumerFunctionAsync(CircularBuffer& buffer, int id)
+{
+    Result result;
+    for (int i = 0; i < 950; ++i)
+    {
+        int value = buffer.Pop();
+        result.minValue = std::min(result.minValue, value);
+        result.maxValue = std::max(result.maxValue, value);
+    }
+
+    return result;
+}
+
 
 int main()
 {
-    
+    CircularBuffer dataBuffer(400);
+    //std::async<Result> consumer1(ConsumerFunction, std::ref(dataBuffer), 1);
+    std::future<Result> consumer1Result = std::async(std::launch::async, ConsumerFunctionAsync, std::ref(dataBuffer), 1);
+    std::future<Result> consumer2Result = std::async(std::launch::async, ConsumerFunctionAsync, std::ref(dataBuffer), 2);
+    std::thread producer1(ProducerFunction, std::ref(dataBuffer), 1);
+    std::thread producer2(ProducerFunction, std::ref(dataBuffer), 2);
 
+    Result result1 = consumer1Result.get();
+    Result result2 = consumer2Result.get();
+    producer2.join();
+    producer1.join();
+
+    std::cout << "Result 1 Max: [" << result1.maxValue << "] Min: [" << result1.minValue << "]\n";
+    std::cout << "Result 2 Max: [" << result2.maxValue << "] Min: [" << result2.minValue << "]\n";
+    totalMax = std::max(totalMax, result1.maxValue);
+    totalMax = std::max(totalMax, result2.maxValue);
+    totalMin = std::min(totalMin, result1.minValue);
+    totalMin = std::min(totalMin, result2.minValue);
+
+    std::cout << "Total Max: [" << totalMax << "] Total Min: [" << totalMin << "]\n";
     return 0;
 }
 
