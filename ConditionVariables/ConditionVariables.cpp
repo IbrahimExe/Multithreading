@@ -1,11 +1,21 @@
-// Week 4 - Condition Variables
+﻿// Week 4 - Condition Variables
 #include <iostream>
 #include <string>
 #include <vector>
 #include <mutex>
 #include <thread>
 #include <chrono>
+#include <random>
 
+/*
+The Game Engine​
+    Create a class Entity​
+    float x, y, z; ​
+    bool hasRenderData; ​
+    string name​
+    Update(float deltaTime); // move in a direction, update position, print name, distance moved, and position​
+    Render(); // prints what entity is being rendered and current position​
+*/
 class Entity
 {
 public:
@@ -37,13 +47,10 @@ public:
     void Render()
     {
         std::cout << "Render: " << mName <<
-            " at position (" << mX << ", " << mY << ", " << mZ << ")\n";
+            " is at position (" << mX << ", " << mY << ", " << mZ << ")\n";
     }
 
-    void GetName()
-    {
-
-    }
+    const std::string& GetName() const { return mName; }
 
 private:
     std::string mName = "";
@@ -51,6 +58,13 @@ private:
     bool mHasRenderData = false;
 };
 
+/*
+Create a class (Singleton if you want practice) EntityManager​
+    std::vector<Entity> mEntities; ​
+    AddEntity(Entity & entity); ​
+    RemoveEntity(const std::string & name); ​
+    Entity& GetEntities();
+*/
 class EntityManager
 {
 public:
@@ -61,7 +75,14 @@ public:
 
     void RemoveEntity(Entity& entity)
     {
-        auto iter = std::find_if(mEntities.begin(), mEntities.end(), [&entity];
+        auto iter = std::find_if(mEntities.begin(), mEntities.end(), [entity](Entity& e)
+            {
+                return e.GetName() == entity.GetName();
+            });
+        if (iter != mEntities.end())
+        {
+            mEntities.erase(iter);
+        }
     }
 
     std::vector<Entity>& GetEntities() { return mEntities; }
@@ -70,6 +91,17 @@ private:
     std::vector<Entity> mEntities;
 };
 
+/*
+Create two class​
+    Simulation​
+        EntityManager* mEntityManager; ​
+        std::mutex* mMutex; ​
+        Initialize(EntityManager & em, std::mutex & mutex); 
+         pass in variable if not using singleton, store as a EntityManager* mEntityManager​
+        Update(); 
+         Update that calls all of the entities update with a 1/60 deltaTime 
+         is a thread and will sleep_for() 17 milliseconds (roughly 60 fps) ​
+*/
 class Simulation
 {
 public:
@@ -87,11 +119,14 @@ public:
         while (mIsRunning)
         {
             mGameMutex->lock();
+            system("cls"); // Clear the console
+            std::cout << "Running Update\n";
             std::vector<Entity>& entities = mEntityManager->GetEntities();
             for (Entity& e : entities)
             {
                 e.Update(deltaTime);
             }
+            std::this_thread::sleep_for(sleepTime);
             mGameMutex->unlock();
             std::this_thread::sleep_for(sleepTime);
             // If you were to make a game frame based,
@@ -104,10 +139,10 @@ public:
             // sleep_for(sleepTime - updateDuration); (If updated < 60fps)
             // if (renderUpdate > 60fps) { }
             // while (frameDuration >= deltaTime)
-            {
+            //{
                 // Update(deltaTime);
                 // frameDuration -= deltaTime;
-            }
+            //}
             // sleep_for(sleepTime);
         }
     }
@@ -118,11 +153,22 @@ public:
     }
 
 private:
-    EntityManager mEntityManager = nullptr;
+    EntityManager* mEntityManager = nullptr;
     std::mutex* mGameMutex = nullptr;
     bool mIsRunning = false;
 };
 
+/*
+Render​
+    EntityManager* mEntityManager; ​
+    std::mutex* mMutex; ​
+    Initialize(EntityManager & em, std::mutex & mutex); 
+    pass in variable if not using singleton, store as a EntityManager* mEntityManager​
+    Render(); 
+    Renders all of the entities
+    is a thread and will sleep_for() 33 ms (roughly 30 fps), 
+    use system("cls") each update​
+*/
 class Render
 {
 public:
@@ -135,16 +181,18 @@ public:
 
     void RenderEntities()
     {
-        std::chrono::milliseconds sleepTime(500);
+        std::chrono::milliseconds sleepTime(1000);
         while (mIsRunning)
         {
-            system("cls"); // Clear the console
             mGameMutex->lock();
+            system("cls"); // Clear the console
+            std::cout << "Running Render\n";
             std::vector<Entity>& entities = mEntityManager->GetEntities();
             for (Entity& e : entities)
             {
                 e.Render();
             }
+            std::this_thread::sleep_for(sleepTime);
             mGameMutex->unlock();
             std::this_thread::sleep_for(sleepTime);
         }
@@ -156,14 +204,23 @@ public:
     }
 
 private:
-    EntityManager mEntityManager = nullptr;
+    EntityManager* mEntityManager = nullptr;
     std::mutex* mGameMutex = nullptr;
     bool mIsRunning = false;
 };
 
+/*
+Test​
+    Create EntityManager, Simulation, and Render classes​
+    Add 20 entities to the entity manager(give names and random positions xz between –100.0f and 100.0f with a y 0.0f)​
+    Create threads for Simulation and Render(thread simulationThread(&Simulation::Run, &simulation);)​
+    Run until you press a button to exit(system("pause"))​
+*/
+
 float RandFloat()
 {
-    float val = (rand() % 201) - 100; // Random float between -100 and 100
+    // Creates a random float between -100 and 100
+    float val = (rand() % 201) - 100; 
     return val;
 }
 
@@ -203,6 +260,17 @@ void GameLoopExample()
     renderThread.join();
     simThread.join();
 }
+
+// thread safe flag to indicate data input is finished
+std::atomic_bool done = false;
+
+int totalMin = INT_MIN;
+int totalMax = INT_MAX;
+
+struct CircularBuffer
+{
+
+};
 
 int main()
 {
