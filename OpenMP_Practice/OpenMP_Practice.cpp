@@ -1,3 +1,4 @@
+// Week 1 - OpenMP Introduction
 #include <iostream>
 #include <omp.h> // Open MP Library
 #include <chrono> // For measuring time
