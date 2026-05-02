@@ -422,13 +422,74 @@ where the game updates and renders at a fixed rate (e.g., 60 FPS).
 */
 
 /* Assignment
-(Can use either code in the zip for examples or VGP340Week4 exercises)
+For this assignment, use the “Condition Variable Example” file provided.
 
-- Use the docx version (.txt has some differences and uses Vector3, just use Vector2)
+The file is a sample project for min max integer stream we developed in class. 
+I have made some minor changes. The point is to use a buffer to be used as a circular queue.
+Numbers are pushed on one end and used (consumed) on the other end.
+You are going to use similar system to solve the following problem:
 
-- use std::async to get the results
+There is a particle system that generates
+a stream of 2d points (x, y) randomly in range -1000.f to 1000.f for each component x, y.
 
-- Each quadrant should manage the points in their respective quadrants
+The points are generated, with a 30 ms time pause between any two consecutive point generation.
+As points are generated we like to find the closest 2 points in the buffer at each quarter.
 
-- Distance is the distance between the 2 points in each quadrant
+There are 4 quarters in 2d space with respect to x, y axis: (+, +), (-, +), (-, -), (+, -).
+For this create 4 consumer threads.
+Each thread receives the newly created point from the common circular buffer, 
+saves it in its own local vector, 
+and then goes about finding the closest 2 points among the points in the local vector.
+
+At the end 
+- the closest 2 points, 
+- their distance, 
+- and total number of points in this quarter are printed to the output, 
+like:
+>quarter 1: closest points are (2.5, 3.1) and (10.1, 11.2) and their distance is 5.4.Total number of point in this quarter is 256.
+
+Make sure to use async to create and manage the 4 threads
+
+This whole engine should stop when the total number of points created reaches 10,000.
+
+As usual hand in clean project with exe in release mode.
+*/
+
+
+/* Assignment [DONT DO THIS ONE, Uses Vector3, We just need to use Vector2]
+Attached is the project for min max integer stream we developed in class. 
+
+I have made some minor changes. The main point is to use a buffer to be used as a circular queue. 
+
+Numbers are pushed on one end and used(consumed) on the other end.
+
+Study the code carefully and analyze it so you know how it works. 
+Notice that in consumer() threads do not go all the way to full 1000 count in the for loop.
+This is important.
+Try to figure out why and what problem it causes if we do so.
+
+You are going to use similar system to solve the following problem:
+Below is a problem you are going to solve using the above project.
+There is a particle system that; 
+generates a stream of 3d points (x, y, z) randomly in range 0.f to 100.f for each component x, y, and z.
+We save the points as they are generated, with a 15 ms time pause between any two consecutive point generation, in a buffer.
+Use sleep_for() function to cause the pause.
+As points are generated we like to find the closest 2 points in the buffer at the moment.
+For this create 3 consumer threads.
+Each thread saves out the entire content of the buffer to a local array and then finds the closest 2 points among the local points.
+The thread saves the closest 2 points to an outputBuffer which is created in the main thread and passed to the consumer threads.
+The main thread print out the newly added pair of points.
+
+So the output would look like this:
+closest pair: <22, 31> and <20, 30> and their distance is sqrt(5)
+closest pair: <15, 11> and <16, 8> and their distance is sqrt(10)
+..........................................
+..........................................
+
+
+
+Do this for a stream of 100 print outs. Notice that the distance should continue shrink.
+It is important to use the BoundedBuf or CircularBuf provided in the attached code or we did develop in class.
+
+As usual hand in clean project with exe in release mode.
 */
