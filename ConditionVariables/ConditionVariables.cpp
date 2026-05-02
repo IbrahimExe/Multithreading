@@ -427,4 +427,8 @@ where the game updates and renders at a fixed rate (e.g., 60 FPS).
 - Use the docx version (.txt has some differences and uses Vector3, just use Vector2)
 
 - use std::async to get the results
+
+- Each quadrant should manage the points in their respective quadrants
+
+- Distance is the distance between the 2 points in each quadrant
 */
