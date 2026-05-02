@@ -420,3 +420,11 @@ The example in the GameLoopExample function is an example of a frame based game 
 where the game updates and renders at a fixed rate (e.g., 60 FPS).
 
 */
+
+/* Assignment
+(Can use either code in the zip for examples or VGP340Week4 exercises)
+
+- Use the docx version (.txt has some differences and uses Vector3, just use Vector2)
+
+- use std::async to get the results
+*/
