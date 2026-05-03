@@ -263,7 +263,7 @@ void GameLoopExample()
 }
 
 // thread safe flag to indicate data input is finished
-std::atomic_bool done = false;
+//std::atomic_bool done = false;
 
 struct CircularBuffer
 {
@@ -314,9 +314,9 @@ struct CircularBuffer
     }
 };
 
-std::mutex bufferMutex;
-int totalMin = INT_MAX;
-int totalMax = INT_MIN;
+//std::mutex bufferMutex;
+//int totalMin = INT_MAX;
+//int totalMax = INT_MIN;
 void ConsumerFunction(CircularBuffer& buffer, int id)
 {
     int localMin = INT_MAX;
@@ -328,10 +328,10 @@ void ConsumerFunction(CircularBuffer& buffer, int id)
         localMax = std::max(localMax, value);
     }
     {
-        std::lock_guard<std::mutex> lk(bufferMutex);
-        std::cout << "Consumer " << id << ": local max [" << localMax << "] local min [" << localMin << "]\n";
-        totalMin = std::min(localMin, totalMin);
-        totalMax = std::max(localMax, totalMax);
+       //std::lock_guard<std::mutex> lk(bufferMutex);
+       //std::cout << "Consumer " << id << ": local max [" << localMax << "] local min [" << localMin << "]\n";
+       //totalMin = std::min(localMin, totalMin);
+       //totalMax = std::max(localMax, totalMax);
     }
 }
 
@@ -359,7 +359,7 @@ void Exercise2()
     consumer2.join();
     consumer1.join();
 
-    std::cout << "Total Max: [" << totalMax << "] Total Min: [" << totalMin << "]\n";
+    //std::cout << "Total Max: [" << totalMax << "] Total Min: [" << totalMin << "]\n";
 }
 
 struct Result
@@ -382,30 +382,30 @@ Result ConsumerFunctionAsync(CircularBuffer& buffer, int id)
 }
 
 
-int main()
-{
-    CircularBuffer dataBuffer(400);
-    //std::async<Result> consumer1(ConsumerFunction, std::ref(dataBuffer), 1);
-    std::future<Result> consumer1Result = std::async(std::launch::async, ConsumerFunctionAsync, std::ref(dataBuffer), 1);
-    std::future<Result> consumer2Result = std::async(std::launch::async, ConsumerFunctionAsync, std::ref(dataBuffer), 2);
-    std::thread producer1(ProducerFunction, std::ref(dataBuffer), 1);
-    std::thread producer2(ProducerFunction, std::ref(dataBuffer), 2);
-
-    Result result1 = consumer1Result.get();
-    Result result2 = consumer2Result.get();
-    producer2.join();
-    producer1.join();
-
-    std::cout << "Result 1 Max: [" << result1.maxValue << "] Min: [" << result1.minValue << "]\n";
-    std::cout << "Result 2 Max: [" << result2.maxValue << "] Min: [" << result2.minValue << "]\n";
-    totalMax = std::max(totalMax, result1.maxValue);
-    totalMax = std::max(totalMax, result2.maxValue);
-    totalMin = std::min(totalMin, result1.minValue);
-    totalMin = std::min(totalMin, result2.minValue);
-
-    std::cout << "Total Max: [" << totalMax << "] Total Min: [" << totalMin << "]\n";
-    return 0;
-}
+//int main()
+//{
+//    CircularBuffer dataBuffer(400);
+//    //std::async<Result> consumer1(ConsumerFunction, std::ref(dataBuffer), 1);
+//    std::future<Result> consumer1Result = std::async(std::launch::async, ConsumerFunctionAsync, std::ref(dataBuffer), 1);
+//    std::future<Result> consumer2Result = std::async(std::launch::async, ConsumerFunctionAsync, std::ref(dataBuffer), 2);
+//    std::thread producer1(ProducerFunction, std::ref(dataBuffer), 1);
+//    std::thread producer2(ProducerFunction, std::ref(dataBuffer), 2);
+//
+//    Result result1 = consumer1Result.get();
+//    Result result2 = consumer2Result.get();
+//    producer2.join();
+//    producer1.join();
+//
+//    std::cout << "Result 1 Max: [" << result1.maxValue << "] Min: [" << result1.minValue << "]\n";
+//    std::cout << "Result 2 Max: [" << result2.maxValue << "] Min: [" << result2.minValue << "]\n";
+//    totalMax = std::max(totalMax, result1.maxValue);
+//    totalMax = std::max(totalMax, result2.maxValue);
+//    totalMin = std::min(totalMin, result1.minValue);
+//    totalMin = std::min(totalMin, result2.minValue);
+//
+//    std::cout << "Total Max: [" << totalMax << "] Total Min: [" << totalMin << "]\n";
+//    return 0;
+//}
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
 // Debug program: F5 or Debug > Start Debugging menu
