@@ -3,11 +3,14 @@
 #include <iostream>
 #include <random>
 #include <chrono>
+#include <vector>
+#include <algorithm>
+#include <thread>
 
-std::atomic_bool done{ false }; // thread safe flag to indicate data input is finished.
+std::atomic_int totalProduced(0);
 
 struct CircularBuffer {
-	int* buf; 
+	int* buf;
 	int capacity;
 
 	int frontIdx, rearIdx, count;
@@ -24,9 +27,9 @@ struct CircularBuffer {
 		buf[rearIdx] = num;
 		rearIdx = (rearIdx + 1) % capacity;
 		++count;
-		
+
 		lk.unlock();
-		notEmpty.notify_one();
+		notEmpty.notify_all();
 	}
 
 	int pop()
@@ -44,52 +47,185 @@ struct CircularBuffer {
 
 };
 
-std::mutex mMmutex;
-int totalMin{ INT_MAX }, totalMax{ INT_MIN };
+std::mutex printLock;
 
-void consumer(CircularBuffer& buf, int id)
+void consumer1(CircularBuffer& buf)
 {
-	int local_min{ INT_MAX };
-	int local_max{ INT_MIN };
-	for (int i = 0; i < 950; ++i) {
-		int val{ buf.pop() };
-		local_min = std::min(local_min, val);
-		local_max = std::max(local_max, val);
-	}
+	std::vector<int> numbers;
+	int consumed = 0;
+
+	while (consumed < 2500)
 	{
-		std::lock_guard<std::mutex> Mmlk(mMmutex);
-		std::cout << "Consumer " << id << ": local_Max value is " << local_max << ", and local_min value is " << local_min << std::endl;
-		totalMin = std::min(totalMin, local_min);
-		totalMax = std::max(totalMax, local_max);
-	}	
+		int val = buf.pop();
+		numbers.push_back(val);
+		consumed++;
+	}
+
+	int closest1 = -1, closest2 = -1;
+	int minDiff = INT_MAX;
+
+	for (int i = 0; i < numbers.size(); ++i)
+	{
+		for (int j = i + 1; j < numbers.size(); ++j)
+		{
+			int diff = abs(numbers[i] - numbers[j]);
+			if (diff < minDiff)
+			{
+				minDiff = diff;
+				closest1 = numbers[i];
+				closest2 = numbers[j];
+			}
+		}
+	}
+
+	{
+		std::lock_guard<std::mutex> lk(printLock);
+		std::cout << "Consumer 1: closest numbers are " << closest1 << " and " << closest2
+			<< " with difference " << minDiff << ". Total numbers: " << numbers.size() << std::endl;
+	}
 }
 
-void producer(CircularBuffer& buf, int id)
+void consumer2(CircularBuffer& buf)
 {
-	// initialize a random generator
+	std::vector<int> numbers;
+	int consumed = 0;
+
+	while (consumed < 2500)
+	{
+		int val = buf.pop();
+		numbers.push_back(val);
+		consumed++;
+	}
+
+	int closest1 = -1, closest2 = -1;
+	int minDiff = INT_MAX;
+
+	for (int i = 0; i < numbers.size(); ++i)
+	{
+		for (int j = i + 1; j < numbers.size(); ++j)
+		{
+			int diff = abs(numbers[i] - numbers[j]);
+			if (diff < minDiff)
+			{
+				minDiff = diff;
+				closest1 = numbers[i];
+				closest2 = numbers[j];
+			}
+		}
+	}
+
+	{
+		std::lock_guard<std::mutex> lk(printLock);
+		std::cout << "Consumer 2: closest numbers are " << closest1 << " and " << closest2
+			<< " with difference " << minDiff << ". Total numbers: " << numbers.size() << std::endl;
+	}
+}
+
+void consumer3(CircularBuffer& buf)
+{
+	std::vector<int> numbers;
+	int consumed = 0;
+
+	while (consumed < 2500)
+	{
+		int val = buf.pop();
+		numbers.push_back(val);
+		consumed++;
+	}
+
+	int closest1 = -1, closest2 = -1;
+	int minDiff = INT_MAX;
+
+	for (int i = 0; i < numbers.size(); ++i)
+	{
+		for (int j = i + 1; j < numbers.size(); ++j)
+		{
+			int diff = abs(numbers[i] - numbers[j]);
+			if (diff < minDiff)
+			{
+				minDiff = diff;
+				closest1 = numbers[i];
+				closest2 = numbers[j];
+			}
+		}
+	}
+
+	{
+		std::lock_guard<std::mutex> lk(printLock);
+		std::cout << "Consumer 3: closest numbers are " << closest1 << " and " << closest2
+			<< " with difference " << minDiff << ". Total numbers: " << numbers.size() << std::endl;
+	}
+}
+
+void consumer4(CircularBuffer& buf)
+{
+	std::vector<int> numbers;
+	int consumed = 0;
+
+	while (consumed < 2500)
+	{
+		int val = buf.pop();
+		numbers.push_back(val);
+		consumed++;
+	}
+
+	int closest1 = -1, closest2 = -1;
+	int minDiff = INT_MAX;
+
+	for (int i = 0; i < numbers.size(); ++i)
+	{
+		for (int j = i + 1; j < numbers.size(); ++j)
+		{
+			int diff = abs(numbers[i] - numbers[j]);
+			if (diff < minDiff)
+			{
+				minDiff = diff;
+				closest1 = numbers[i];
+				closest2 = numbers[j];
+			}
+		}
+	}
+
+	{
+		std::lock_guard<std::mutex> lk(printLock);
+		std::cout << "Consumer 4: closest numbers are " << closest1 << " and " << closest2
+			<< " with difference " << minDiff << ". Total numbers: " << numbers.size() << std::endl;
+	}
+}
+
+void producer(CircularBuffer& buf)
+{
 	std::mt19937 generator((unsigned int)std::chrono::system_clock::now().time_since_epoch().count());
 
-	for (int i = 0; i < 1000; ++i)
+	for (int i = 0; i < 10000; ++i)
 	{
-		buf.push(generator()%1000);
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));  // just mimicking some work to be done.
+		//buf.push(generator() % 1000);    // 0 - 999
+		buf.push(generator() % 100000000); // 0-99,999,999 = more variation
+		totalProduced++;
+		std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Generate 10,000 random integers 
+																	// With a 10ms delay
 	}
 }
+
+// Cant generate 8000 random ints, and leave quadrant consumers at 2500 each
+// As this would cause a deadlock/
 
 int main()
 {
 	CircularBuffer dataBuf(400);
-	std::thread consumer1(consumer, std::ref(dataBuf), 1);
-	std::thread consumer2(consumer, std::ref(dataBuf), 2);
-	std::thread producer1(producer, std::ref(dataBuf), 1);
-	std::thread producer2(producer, std::ref(dataBuf), 2);
 
-	consumer1.join();
-	consumer2.join();
-	producer1.join();
-	producer2.join();
+	std::thread prod(producer, std::ref(dataBuf));
+	std::thread cons1(consumer1, std::ref(dataBuf));
+	std::thread cons2(consumer2, std::ref(dataBuf));
+	std::thread cons3(consumer3, std::ref(dataBuf));
+	std::thread cons4(consumer4, std::ref(dataBuf));
 
-	// print the final min and max of the data in the buf,
-	std::cout << "Total min = " << totalMin << ", totalMax = " << totalMax << std::endl;
+	prod.join();
+	cons1.join();
+	cons2.join();
+	cons3.join();
+	cons4.join();
+
+	std::cout << "Done! Total numbers produced: " << totalProduced << std::endl;
 	return 0;
 }
