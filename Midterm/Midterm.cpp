@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <chrono>
 #include <queue>
+#include <atomic>
 
 const std::size_t MaxQueueSize = 1000;
 using WordCountMapType = std::unordered_map<std::string, std::size_t>;  // use this to keep track of count of each word.
@@ -114,19 +115,10 @@ WordCountMapType WordsInFile(const char* const fileName) // for each word
 }
 
 // Read book file and push the words read into the queuw
-void ProducerThread(const char* fileName, WordQueue& queue, WordCountMapType& bookWordMap)
+void ProducerThread(const char* fileName, WordQueue& queue, WordCountMapType& bookWordMap, std::atomic<int>& finishedProducers)
 {
 	std::ifstream file(fileName);
 	std::string word;
-	int wordCount = 0;
-
-	std::cout << "DEBUG: Producer started for " << fileName << "\n";
-
-	if (!file.is_open())
-	{
-		std::cout << "DEBUG: ERROR - Could not open file " << fileName << "\n";
-		return;
-	}
 
 	while (file >> word)
 	{
@@ -134,20 +126,27 @@ void ProducerThread(const char* fileName, WordQueue& queue, WordCountMapType& bo
 		{
 			queue.push(word);
 			++bookWordMap[word];
-			wordCount++;
-			if (wordCount % 10000 == 0)
-			{
-				std::cout << "DEBUG: Producer read " << wordCount << " words\n";
-			}
 		}
 	}
 	file.close();
-	std::cout << "DEBUG: Producer finished - Total words: " << wordCount << "\n";
+
+	finishedProducers++;
 }
 
 // Mutex for protecting the main word map and console output
 std::mutex masterMapMutex;
 std::mutex consoleMutex;
+
+// helper to check if the ques are empty or not
+bool AllQueuesEmpty(std::vector<WordQueue>& queues)
+{
+	for (int i = 0; i < queues.size(); ++i)
+	{
+		if (!queues[i].IsEmpty())
+			return false;
+	}
+	return true;
+}
 
 int main(int argc, char* argv[])
 {
@@ -172,6 +171,8 @@ int main(int argc, char* argv[])
 	std::vector<WordQueue> queues(argc - 1);
 	std::vector<WordCountMapType> bookMaps(argc - 1);
 
+	std::atomic<int> finishedProducers(0);
+
 	std::cout << "\nProgress: Starting analysis of " << (argc - 1) << " book(s)...\n";
 	auto analysisStart = std::chrono::steady_clock::now();
 
@@ -181,19 +182,17 @@ int main(int argc, char* argv[])
 		std::cout << "Progress: Analysing " << argv[i] << "...\n";
 		producerThreads.push_back(std::thread(ProducerThread, argv[i],
 			std::ref(queues[i - 1]),
-			std::ref(bookMaps[i - 1])));
+			std::ref(bookMaps[i - 1]),
+			std::ref(finishedProducers)));
 	}
 
 	std::cout << "Progress: Collecting words from queues...\n";
 
 	// Continuously collect from all queues while producers are running
-	// Keep collecting until ALL threads are done AND all queues are empty
 	int totalCollected = 0;
-	bool shouldContinue = true;
-	while (shouldContinue)
-	{
-		shouldContinue = false;
 
+	while (finishedProducers < (argc - 1) || !AllQueuesEmpty(queues))
+	{
 		for (int i = 0; i < queues.size(); ++i)
 		{
 			std::string word;
@@ -202,33 +201,11 @@ int main(int argc, char* argv[])
 				std::lock_guard<std::mutex> lock(masterMapMutex);
 				++masterWordMap[word];
 				totalCollected++;
-				shouldContinue = true; // Queue had data, keep looping
-
-				if (totalCollected % 50000 == 0)
-				{
-					std::cout << "DEBUG: Collected " << totalCollected << " words so far\n";
-				}
 			}
 		}
 
-		// Check if any producer thread is still running
-		for (auto& thread : producerThreads)
-		{
-			if (thread.joinable())
-			{
-				shouldContinue = true; // Thread still running, keep looping
-				break;
-			}
-		}
-
-		// Small sleep to avoid busy waiting
-		if (shouldContinue)
-		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
-		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
-
-	std::cout << "DEBUG: Collection loop complete. Total collected: " << totalCollected << "\n";
 
 	// wait for all producer threads to finish
 	std::cout << "Progress: Waiting for producer threads to complete...\n";
