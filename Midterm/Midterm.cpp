@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <chrono>
 #include <queue>
-#include <atomic>
+#include <atomic> 
 
 const std::size_t MaxQueueSize = 1000;
 using WordCountMapType = std::unordered_map<std::string, std::size_t>;  // use this to keep track of count of each word.
@@ -28,6 +28,7 @@ struct WordQueue
 	std::queue<std::string> words;
 	std::mutex mutex;
 	std::condition_variable notFull;
+	std::condition_variable notEmpty;
 
 	void push(const std::string& word)
 	{
@@ -35,6 +36,8 @@ struct WordQueue
 		notFull.wait(lock, [this]() {return words.size() < MaxQueueSize; });
 		words.push(word);
 
+		lock.unlock();
+		notEmpty.notify_one();
 	}
 
 	std::string pop()
@@ -46,6 +49,25 @@ struct WordQueue
 		lock.unlock();
 		notFull.notify_one();
 		return word;
+	}
+
+	// a more efficient pop
+	bool waitAndPop(std::string& word, std::atomic<int>& finishedProducers, int totalProducers)
+	{
+		std::unique_lock<std::mutex> lock(mutex);
+
+		notEmpty.wait(lock, [this, &finishedProducers, totalProducers]() {
+			return !words.empty() || finishedProducers == totalProducers;
+			});
+
+		if (words.empty()) return false;
+
+		word = words.front();
+		words.pop();
+
+		lock.unlock();
+		notFull.notify_one();
+		return true;
 	}
 
 	bool IsEmpty()
@@ -130,23 +152,13 @@ void ProducerThread(const char* fileName, WordQueue& queue, WordCountMapType& bo
 	}
 	file.close();
 
-	finishedProducers++;
+	finishedProducers++; 
+	queue.notEmpty.notify_all();
 }
 
 // Mutex for protecting the main word map and console output
 std::mutex masterMapMutex;
 std::mutex consoleMutex;
-
-// helper to check if the ques are empty or not
-bool AllQueuesEmpty(std::vector<WordQueue>& queues)
-{
-	for (int i = 0; i < queues.size(); ++i)
-	{
-		if (!queues[i].IsEmpty())
-			return false;
-	}
-	return true;
-}
 
 int main(int argc, char* argv[])
 {
@@ -163,6 +175,7 @@ int main(int argc, char* argv[])
 
 	// master word map for all books combined
 	WordCountMapType masterWordMap;
+	masterWordMap.reserve(50000);
 
 	// create a vector to hold all threads
 	std::vector<std::thread> producerThreads;
@@ -170,6 +183,8 @@ int main(int argc, char* argv[])
 	// create queues and word maps for each book
 	std::vector<WordQueue> queues(argc - 1);
 	std::vector<WordCountMapType> bookMaps(argc - 1);
+
+	for (auto& m : bookMaps) m.reserve(20000); 
 
 	std::atomic<int> finishedProducers(0);
 
@@ -191,20 +206,34 @@ int main(int argc, char* argv[])
 	// Continuously collect from all queues while producers are running
 	int totalCollected = 0;
 
-	while (finishedProducers < (argc - 1) || !AllQueuesEmpty(queues))
+	for (int i = 0; i < queues.size(); ++i)
 	{
-		for (int i = 0; i < queues.size(); ++i)
+		WordCountMapType localBatch;
+		localBatch.reserve(1000);
+
+		while (true)
 		{
 			std::string word;
-			while ((word = queues[i].pop()) != "")
+
+			if (!queues[i].waitAndPop(word, finishedProducers, argc - 1))
+				break;
+
+			localBatch[word]++;
+			totalCollected++;
+
+			if (localBatch.size() >= 1000)
 			{
 				std::lock_guard<std::mutex> lock(masterMapMutex);
-				++masterWordMap[word];
-				totalCollected++;
+				for (auto& p : localBatch)
+					masterWordMap[p.first] += p.second;
+				localBatch.clear();
 			}
 		}
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		// flush remaining
+		std::lock_guard<std::mutex> lock(masterMapMutex);
+		for (auto& p : localBatch)
+			masterWordMap[p.first] += p.second;
 	}
 
 	// wait for all producer threads to finish
@@ -217,28 +246,16 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	// collect any remaining words from queues
-	std::cout << "Progress: Collecting remaining words from queues...\n";
-	for (int i = 0; i < queues.size(); ++i)
-	{
-		std::string word;
-		while ((word = queues[i].pop()) != "")
-		{
-			std::lock_guard<std::mutex> lock(masterMapMutex);
-			++masterWordMap[word];
-		}
-	}
-
 	auto analysisEnd = std::chrono::steady_clock::now();
 	double analysisTime = std::chrono::duration<double>(analysisEnd - analysisStart).count();
 
 	// write output for each book
-	std::cout << "\nProgress: Writing Outputs for each book...\n";
+	std::cout << "\nProgress: Writing outputs for each book...\n";
 	for (int i = 1; i < argc; ++i)
 	{
 		std::string outputFileName = std::string(argv[i]) + "_output.txt";
 		WriteOutput(outputFileName.c_str(), bookMaps[i - 1]);
-		std::cout << "Progress: Output written for " << outputFileName << "\n";
+		std::cout << "Progress: Wrote " << outputFileName << "\n";
 	}
 
 	// combined output for all books
