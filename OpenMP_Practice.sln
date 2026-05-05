@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Concurrency", "Concurrency\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConditionVariables", "ConditionVariables\ConditionVariables.vcxproj", "{6E2F303D-7C15-452E-96A3-05B33AA46605}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Midterm", "..\..\..\Downloads\Midterm\Midterm\Midterm\Midterm.vcxproj", "{1F021E4E-4A5C-4D3C-A84A-5EA4859D3428}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -41,6 +43,14 @@ Global
 		{6E2F303D-7C15-452E-96A3-05B33AA46605}.Release|x64.Build.0 = Release|x64
 		{6E2F303D-7C15-452E-96A3-05B33AA46605}.Release|x86.ActiveCfg = Release|Win32
 		{6E2F303D-7C15-452E-96A3-05B33AA46605}.Release|x86.Build.0 = Release|Win32
+		{1F021E4E-4A5C-4D3C-A84A-5EA4859D3428}.Debug|x64.ActiveCfg = Debug|x64
+		{1F021E4E-4A5C-4D3C-A84A-5EA4859D3428}.Debug|x64.Build.0 = Debug|x64
+		{1F021E4E-4A5C-4D3C-A84A-5EA4859D3428}.Debug|x86.ActiveCfg = Debug|Win32
+		{1F021E4E-4A5C-4D3C-A84A-5EA4859D3428}.Debug|x86.Build.0 = Debug|Win32
+		{1F021E4E-4A5C-4D3C-A84A-5EA4859D3428}.Release|x64.ActiveCfg = Release|x64
+		{1F021E4E-4A5C-4D3C-A84A-5EA4859D3428}.Release|x64.Build.0 = Release|x64
+		{1F021E4E-4A5C-4D3C-A84A-5EA4859D3428}.Release|x86.ActiveCfg = Release|Win32
+		{1F021E4E-4A5C-4D3C-A84A-5EA4859D3428}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
