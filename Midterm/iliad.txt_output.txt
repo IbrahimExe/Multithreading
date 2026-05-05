@@ -15,6 +15,6 @@ was : 1183
 they : 1004
 on : 981
 from : 974
-but : 889
 son : 889
+but : 889
 had : 884

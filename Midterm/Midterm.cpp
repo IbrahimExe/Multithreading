@@ -28,7 +28,6 @@ struct WordQueue
 	std::queue<std::string> words;
 	std::mutex mutex;
 	std::condition_variable notFull;
-	std::condition_variable notEmpty;
 
 	void push(const std::string& word)
 	{
@@ -36,8 +35,6 @@ struct WordQueue
 		notFull.wait(lock, [this]() {return words.size() < MaxQueueSize; });
 		words.push(word);
 
-		lock.unlock();
-		notEmpty.notify_one();
 	}
 
 	std::string pop()
@@ -49,25 +46,6 @@ struct WordQueue
 		lock.unlock();
 		notFull.notify_one();
 		return word;
-	}
-
-	// a more efficient pop
-	bool waitAndPop(std::string& word, std::atomic<int>& finishedProducers, int totalProducers)
-	{
-		std::unique_lock<std::mutex> lock(mutex);
-
-		notEmpty.wait(lock, [this, &finishedProducers, totalProducers]() {
-			return !words.empty() || finishedProducers == totalProducers;
-			});
-
-		if (words.empty()) return false;
-
-		word = words.front();
-		words.pop();
-
-		lock.unlock();
-		notFull.notify_one();
-		return true;
 	}
 
 	bool IsEmpty()
@@ -152,13 +130,23 @@ void ProducerThread(const char* fileName, WordQueue& queue, WordCountMapType& bo
 	}
 	file.close();
 
-	finishedProducers++; 
-	queue.notEmpty.notify_all();
+	finishedProducers++;
 }
 
 // Mutex for protecting the main word map and console output
 std::mutex masterMapMutex;
 std::mutex consoleMutex;
+
+bool AllQueuesEmpty(std::vector<WordQueue>& queues)
+{
+	for (int i = 0; i < queues.size(); ++i)
+	{
+		if (!queues[i].IsEmpty())
+			return false;
+	}
+
+	return true;
+}
 
 int main(int argc, char* argv[])
 {
@@ -175,7 +163,6 @@ int main(int argc, char* argv[])
 
 	// master word map for all books combined
 	WordCountMapType masterWordMap;
-	masterWordMap.reserve(50000);
 
 	// create a vector to hold all threads
 	std::vector<std::thread> producerThreads;
@@ -183,8 +170,6 @@ int main(int argc, char* argv[])
 	// create queues and word maps for each book
 	std::vector<WordQueue> queues(argc - 1);
 	std::vector<WordCountMapType> bookMaps(argc - 1);
-
-	for (auto& m : bookMaps) m.reserve(20000); 
 
 	std::atomic<int> finishedProducers(0);
 
@@ -205,35 +190,37 @@ int main(int argc, char* argv[])
 
 	// Continuously collect from all queues while producers are running
 	int totalCollected = 0;
+	std::vector<WordCountMapType> localBatches(queues.size());
+	for (auto& batch : localBatches)
+		batch.reserve(1000);
 
-	for (int i = 0; i < queues.size(); ++i)
+	while (finishedProducers < (argc - 1) || !AllQueuesEmpty(queues))
 	{
-		WordCountMapType localBatch;
-		localBatch.reserve(1000);
+		bool didWork = false;
 
-		while (true)
+		for (int i = 0; i < queues.size(); ++i)
 		{
 			std::string word;
-
-			if (!queues[i].waitAndPop(word, finishedProducers, argc - 1))
-				break;
-
-			localBatch[word]++;
-			totalCollected++;
-
-			if (localBatch.size() >= 1000)
+			while ((word = queues[i].pop()) != "")
 			{
-				std::lock_guard<std::mutex> lock(masterMapMutex);
-				for (auto& p : localBatch)
-					masterWordMap[p.first] += p.second;
-				localBatch.clear();
+				localBatches[i][word]++;
+				totalCollected++;
+				didWork = true;
+
+				if (localBatches[i].size() >= 1000)
+				{
+					std::lock_guard<std::mutex> lock(masterMapMutex);
+					for (auto& p : localBatches[i])
+						masterWordMap[p.first] += p.second;
+					localBatches[i].clear();
+				}
 			}
 		}
 
-		// flush remaining
-		std::lock_guard<std::mutex> lock(masterMapMutex);
-		for (auto& p : localBatch)
-			masterWordMap[p.first] += p.second;
+		if (!didWork)
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
 	}
 
 	// wait for all producer threads to finish
@@ -244,6 +231,15 @@ int main(int argc, char* argv[])
 		{
 			thread.join();
 		}
+	}
+
+	// collect any remaining words from queues
+	std::cout << "Progress: Collecting remaining words from queues...\n";
+	for (int i = 0; i < localBatches.size(); ++i)
+	{
+		std::lock_guard<std::mutex> lock(masterMapMutex);
+		for (auto& p : localBatches[i])
+			masterWordMap[p.first] += p.second;
 	}
 
 	auto analysisEnd = std::chrono::steady_clock::now();

@@ -13,8 +13,8 @@ this : 49
 is : 43
 for : 39
 any : 36
-was : 35
 on : 35
+was : 35
 work : 33
 The : 32
 not : 32
