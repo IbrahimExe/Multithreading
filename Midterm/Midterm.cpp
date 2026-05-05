@@ -71,9 +71,9 @@ std::vector<WordCount> GetTopWords(WordCountMapType& wordMap, int topN)
 
 	// sort to only get the topN counts
 	std::sort(vec.begin(), vec.end(), [](const WordCount& a, const WordCount& b)
-	{
-		return a.count > b.count;
-	});
+		{
+			return a.count > b.count;
+		});
 
 	if (vec.size() > topN)
 	{
@@ -148,70 +148,65 @@ int main(int argc, char* argv[])
 	// master word map for all books combined
 	WordCountMapType masterWordMap;
 
-	// create a vector to hold allthe threads
+	// create a vector to hold all threads
 	std::vector<std::thread> producerThreads;
 
 	// create queues and word maps for each book
 	std::vector<WordQueue> queues(argc - 1);
 	std::vector<WordCountMapType> bookMaps(argc - 1);
 
+	std::cout << "\nProgress: Starting analysis of " << (argc - 1) << " book(s)...\n";
+	auto analysisStart = std::chrono::steady_clock::now();
+
 	// create producer threads for each book
 	for (int i = 1; i < argc; ++i)
 	{
 		std::cout << "Progress: Analysing " << argv[i] << "...\n";
-		producerThreads.push_back(std::thread(ProducerThread, argv[i], 
+		producerThreads.push_back(std::thread(ProducerThread, argv[i],
 			std::ref(queues[i - 1]),
 			std::ref(bookMaps[i - 1])));
 	}
 
-	// Main thread to collect words form the queues
-	bool allQueuesEmpty = false;
-	while (!allQueuesEmpty)
-	{
-		allQueuesEmpty = true;
+	std::cout << "Progress: Collecting words from queues...\n";
 
-		for (int i = 0; i < queues.size(); ++i)
-		{
-			// check if que has words or is still being filled
-			while (queues[i].Size() >= MaxQueueSize || !queues[i].IsEmpty())
-			{
-				std::string word = queues[i].pop();
-
-				if (!word.empty())
-				{
-					std::lock_guard<std::mutex> lock(masterMapMutex);
-					++masterWordMap[word];
-				}
-				allQueuesEmpty = false;
-			}
-		}
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	}
-
-	// wait for all producer threads to finish
-	for (auto& thread : producerThreads)
-	{
-		thread.join();
-	}
-
-	// collect remaining words from que's
+	// Main thread collects words from queues while producers run
 	for (int i = 0; i < queues.size(); ++i)
 	{
 		std::string word;
 		while ((word = queues[i].pop()) != "")
 		{
-            std::lock_guard<std::mutex> lock(masterMapMutex);
+			std::lock_guard<std::mutex> lock(masterMapMutex);
 			++masterWordMap[word];
 		}
 	}
+
+	// wait for all producer threads to finish
+	std::cout << "Progress: Waiting for producer threads to complete...\n";
+	for (auto& thread : producerThreads)
+	{
+		thread.join();
+	}
+
+	// collect any remaining words from queues
+	std::cout << "Progress: Collecting remaining words from queues...\n";
+	for (int i = 0; i < queues.size(); ++i)
+	{
+		std::string word;
+		while ((word = queues[i].pop()) != "")
+		{
+			std::lock_guard<std::mutex> lock(masterMapMutex);
+			++masterWordMap[word];
+		}
+	}
+
+	auto analysisEnd = std::chrono::steady_clock::now();
+	double analysisTime = std::chrono::duration<double>(analysisEnd - analysisStart).count();
 
 	// write output for each book
 	std::cout << "\nProgress: Writing Outputs for each book...\n";
 	for (int i = 1; i < argc; ++i)
 	{
 		std::string outputFileName = std::string(argv[i]) + "_output.txt";
-		
 		WriteOutput(outputFileName.c_str(), bookMaps[i - 1]);
 		std::cout << "Progress: Output written for " << outputFileName << "\n";
 	}
@@ -226,9 +221,15 @@ int main(int argc, char* argv[])
 	std::vector<WordCount> topWords = GetTopWords(masterWordMap, 20);
 	for (const auto& wordCount : topWords)
 	{
-		std::cout << wordCount.word << " : " << wordCount.count << std::endl;
+		std::cout << wordCount.word << " : " << wordCount.count << "\n";
 	}
 
+	auto overallEnd = std::chrono::steady_clock::now();
+	double totalTime = std::chrono::duration<double>(overallEnd - overallStart).count();
+
+	std::cout << "\nAnalysis time: " << analysisTime << " seconds\n";
+	std::cout << "Total time: " << totalTime << " seconds\n";
 	std::cout << "\nComplete\n";
+
 	return 0;
 }
