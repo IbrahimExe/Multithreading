@@ -136,6 +136,8 @@ std::mutex consoleMutex;
 
 int main(int argc, char* argv[])
 {
+	auto overallStart = std::chrono::steady_clock::now();
+
 	std::cout << "Midterm Word Count:\n";
 	std::cout << "Started...\n";
 
