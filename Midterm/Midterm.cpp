@@ -118,6 +118,15 @@ void ProducerThread(const char* fileName, WordQueue& queue, WordCountMapType& bo
 {
 	std::ifstream file(fileName);
 	std::string word;
+	int wordCount = 0;
+
+	std::cout << "DEBUG: Producer started for " << fileName << "\n";
+
+	if (!file.is_open())
+	{
+		std::cout << "DEBUG: ERROR - Could not open file " << fileName << "\n";
+		return;
+	}
 
 	while (file >> word)
 	{
@@ -125,9 +134,15 @@ void ProducerThread(const char* fileName, WordQueue& queue, WordCountMapType& bo
 		{
 			queue.push(word);
 			++bookWordMap[word];
+			wordCount++;
+			if (wordCount % 10000 == 0)
+			{
+				std::cout << "DEBUG: Producer read " << wordCount << " words\n";
+			}
 		}
 	}
 	file.close();
+	std::cout << "DEBUG: Producer finished - Total words: " << wordCount << "\n";
 }
 
 // Mutex for protecting the main word map and console output
@@ -171,22 +186,58 @@ int main(int argc, char* argv[])
 
 	std::cout << "Progress: Collecting words from queues...\n";
 
-	// Main thread collects words from queues while producers run
-	for (int i = 0; i < queues.size(); ++i)
+	// Continuously collect from all queues while producers are running
+	// Keep collecting until ALL threads are done AND all queues are empty
+	int totalCollected = 0;
+	bool shouldContinue = true;
+	while (shouldContinue)
 	{
-		std::string word;
-		while ((word = queues[i].pop()) != "")
+		shouldContinue = false;
+
+		for (int i = 0; i < queues.size(); ++i)
 		{
-			std::lock_guard<std::mutex> lock(masterMapMutex);
-			++masterWordMap[word];
+			std::string word;
+			while ((word = queues[i].pop()) != "")
+			{
+				std::lock_guard<std::mutex> lock(masterMapMutex);
+				++masterWordMap[word];
+				totalCollected++;
+				shouldContinue = true; // Queue had data, keep looping
+
+				if (totalCollected % 50000 == 0)
+				{
+					std::cout << "DEBUG: Collected " << totalCollected << " words so far\n";
+				}
+			}
+		}
+
+		// Check if any producer thread is still running
+		for (auto& thread : producerThreads)
+		{
+			if (thread.joinable())
+			{
+				shouldContinue = true; // Thread still running, keep looping
+				break;
+			}
+		}
+
+		// Small sleep to avoid busy waiting
+		if (shouldContinue)
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
 	}
+
+	std::cout << "DEBUG: Collection loop complete. Total collected: " << totalCollected << "\n";
 
 	// wait for all producer threads to finish
 	std::cout << "Progress: Waiting for producer threads to complete...\n";
 	for (auto& thread : producerThreads)
 	{
-		thread.join();
+		if (thread.joinable())
+		{
+			thread.join();
+		}
 	}
 
 	// collect any remaining words from queues
