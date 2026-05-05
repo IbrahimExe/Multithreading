@@ -9,7 +9,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Concurrency", "Concurrency\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConditionVariables", "ConditionVariables\ConditionVariables.vcxproj", "{6E2F303D-7C15-452E-96A3-05B33AA46605}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Midterm", "..\..\..\Downloads\Midterm\Midterm\Midterm\Midterm.vcxproj", "{1F021E4E-4A5C-4D3C-A84A-5EA4859D3428}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Midterm", "Midterm\Midterm.vcxproj", "{1F021E4E-4A5C-4D3C-A84A-5EA4859D3428}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
