@@ -276,3 +276,139 @@ int main(int argc, char* argv[])
 
 	return 0;
 }
+
+/* MIDTERM IDEAL METHOD
+
+
+const std::size_t MaxQueuSize = 10000; // Play around with this number in order to get the most optimized time.
+using WordCountMapType = std::unordered_map<std::string, std::size_t>;  // use this to keep track of count of each word.
+
+struct WordCount // use this to track words to sort, this is an example of storing the count, but there are other options
+{
+	std::string word;
+	std::size_t count;
+};
+
+struct SharedQueue
+{
+	std::queue<std::string> words;
+	std::mutex wordMtx;
+	std::condition_variable wordCV;
+	bool finished = false;
+};
+
+std::vector<WordCount> GetTopWords(WordCountMapType& wordMap, int topN)
+{
+	std::vector<WordCount> vec;
+	for (auto& words : wordMap)
+	{
+		vec.push_back({ words.first, words.second });
+	}
+
+	std::sort(vec.begin(), vec.end(), [](const WordCount& a, const WordCount& b)
+		{
+			return a.count > b.count;
+		});
+
+	vec.resize(topN);
+
+	return vec;
+}
+
+// This writes the word counts to the outputfile
+void WriteOutput(const char* const filename, WordCountMapType& wordMap)
+{
+	std::ofstream out(filename);
+	std::vector<WordCount> topWords = GetTopWords(wordMap, 20);
+
+	for (auto& data : topWords)
+	{
+		out << data.word << " : " << data.count << std::endl;
+	}
+}
+
+WordCountMapType WordsInFile(const char* const fileName, SharedQueue& sharedQ) // for each word
+{ // in file, return
+	std::ifstream file(fileName); // # of
+	WordCountMapType wordCounts; // occurrences
+	for (std::string word; file >> word;)// this is not efficient. You can read the whole file into one string and the process that string , instead of reading one word at a time from file.
+	{
+		if (word.size() > 1)
+		{
+			++wordCounts[word];
+			std::unique_lock<std::mutex> lk(sharedQ.wordMtx);
+			sharedQ.words.push(word);
+			if (sharedQ.words.size() >= MaxQueuSize)
+			{
+				sharedQ.wordCV.notify_one();
+
+				sharedQ.wordCV.wait(lk, [&sharedQ] { return sharedQ.words.empty(); } );
+			}
+		}
+	}
+
+	return wordCounts;
+}
+
+void ProcessBook(const char* const fileName, SharedQueue& sharedQ)
+{
+	WordCountMapType wordsInFile = WordsInFile(fileName, sharedQ);
+
+	{
+		std::unique_lock<std::mutex> lk(sharedQ.wordMtx);
+		sharedQ.finished = true;
+	}
+	sharedQ.wordCV.notify_one();
+
+	std::string outputFile = fileName;
+	outputFile += "_output.txt";
+	WriteOutput(outputFile.c_str(), wordsInFile);
+}
+
+WordCountMapType globalWordCount;
+
+int main(int argc, char* argv[])
+{
+	std::cout << "Midterm Word Count:\n";
+
+	std::vector<std::thread> processBooksThreads;
+	std::vector<SharedQueue> sharedQueues(argc - 1);
+
+	for (int i = 1; i < argc; ++i)
+	{
+		(void)processBooksThreads.emplace_back(ProcessBook, argv[i], std::ref(sharedQueues[i - 1]));
+	}
+
+	bool allFinished = false;
+	while (!allFinished)
+	{
+		allFinished = true;
+		for (SharedQueue& q : sharedQueues)
+		{
+			std::unique_lock<std::mutex> lk(q.wordMtx);
+			q.wordCV.wait_for(lk, std::chrono::milliseconds(10));
+
+			while (!q.words.empty())
+			{
+				std::string word = q.words.front();
+				q.words.pop();
+				++globalWordCount[word];
+			}
+			q.wordCV.notify_one();
+			if (!q.finished)
+			{
+				allFinished = false;
+			}
+		}
+	}
+
+	for (std::thread& books : processBooksThreads)
+	{
+		books.join();
+	}
+
+	WriteOutput("final_output.txt", globalWordCount);
+	std::cout << "All Done!\n";
+}
+
+*/
