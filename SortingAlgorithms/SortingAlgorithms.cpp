@@ -2,6 +2,26 @@
 //
 
 #include <iostream>
+#include <thread>
+#include <future>
+#include <vector>
+#include <chrono>
+
+std::chrono::high_resolution_clock::time_point gStartTime;
+
+void StartAlgorithm()
+{
+    gStartTime = std::chrono::high_resolution_clock::now();
+}
+
+void PrintAlgorithmDuration()
+{
+    auto endTime = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - gStartTime).count();
+    std::cout << "Algorithm Duration: " << duration << "micro\n";
+}
+
+
 
 int main()
 {
