@@ -42,7 +42,57 @@ void ForkJoin()
     // After getting the result in each thread, get the total
     // Add them in a for loop and get the time
 
+    std::cout << "Fork - Join:\n";
+    const int numberOfThreads = 10;
+    const int maxGenerate = 100000;
+    const int minNumber = 1;
+    const int maxNumber = 100;
+
+    std::vector<int> numbers(maxGenerate, 0);
+    for (int i = 0; i < maxGenerate; ++i)
+    {
+        numbers[i] = minNumber + (rand() % (maxNumber + 1 - minNumber));
+    }
+
+    int resultA = 0;
+    StartAlgorithm();
+    
+    SumOfNumbers(numbers, 0, maxGenerate, resultA);
+    std::cout << "Result: " << resultA << "\n";
+    
+    PrintAlgorithmDuration();
+
+    int resultB = 0;
+    StartAlgorithm();
+    int split = maxGenerate / numberOfThreads;
+    std::vector<int>threadResults(numberOfThreads);
+    std::vector<std::thread> threads;
+
+    // Fork the data into multiple threads to do calculations
+    for (int i = 0; i < numberOfThreads; ++i)
+    {
+        int startIndex = split + i;
+        int endIndex = startIndex + split;
+        (void)threads.emplace_back(SumOfNumbers, std::ref(numbers),
+            startIndex, endIndex, std::ref(threadResults[i]));
+    }
+
+    for (std::thread& thread : threads)
+    {
+        thread.join();
+    }
+
+    // Join the results for the total result
+    for (int& res : threadResults)
+    {
+        resultB += res;
+    }
+
+    std::cout << "Result: " << resultB << "\n";
+    PrintAlgorithmDuration();
 }
+
+
 
 int main()
 {
