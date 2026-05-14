@@ -35,6 +35,14 @@ void SumOfNumbers(const std::vector<int>& numbers, int startIndex, int endIndex,
     }
 }
 
+void ForkJoin()
+{
+    // Generate 10000 random numbers from 1 - 100
+    // Split them up into 4 threads to add up the section in each thread
+    // After getting the result in each thread, get the total
+    // Add them in a for loop and get the time
+
+}
 
 int main()
 {
