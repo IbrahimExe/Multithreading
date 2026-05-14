@@ -21,8 +21,19 @@ void PrintAlgorithmDuration()
     std::cout << "Algorithm Duration: " << duration << "micro\n";
 }
 
-
-
+void SumOfNumbers(const std::vector<int>& numbers, int startIndex, int endIndex, int sum)
+{
+    sum = 0;
+    for (int i = startIndex; i < endIndex; ++i)
+    {
+        // Code to simulate slow algorithm to show the benefits of threading vs not threading
+        int k = 1000;
+        while (k > 0)
+        {
+            --k;
+        }
+    }
+}
 
 
 int main()
