@@ -117,9 +117,23 @@ int Partition(std::vector<int>& numbers, int start, int end)
     return i + 1;
 }
 
+void QuickSort(std::vector<int>& numbers, int start, int end)
+{
+    if (start < end)
+    {
+        int pivot = Partition(numbers, start, end);
+        
+        QuickSort(numbers, start, pivot - 1);
+        QuickSort(numbers, pivot + 1, end);
+    }
+}
 
 void DivideAndConquer()
 {
+    // Generate 10000 random numbers from 1 - 1000
+    // Sort them using a quick sort method
+    // Split the chunks into mini threads when the count is more than 1000
+
 
 }
 
