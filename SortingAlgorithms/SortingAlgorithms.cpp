@@ -134,13 +134,39 @@ void DivideAndConquer()
     // Sort them using a quick sort method
     // Split the chunks into mini threads when the count is more than 1000
 
+    std::cout << "Divide & Conquer:\n";
+    const int numberOfThreads = 4;
+    const int maxGenerate = 10000;
+    const int minNumber = 1;
+    const int maxNumber = 1000;
 
+    std::vector<int> numbersS(maxGenerate, 0);
+    std::vector<int> numbersP(maxGenerate, 0);
+    for (int i = 0; i < maxGenerate; ++i)
+    {
+        numbersS[i] = minNumber + (rand() % (maxNumber + 1 - minNumber));
+        numbersP[i] = numbersS[i];
+    }
+
+    StartAlgorithm();
+    QuickSort(numbersS, 0, maxGenerate - 1);
+    std::cout << " ";
+    for (int& num : numbersS)
+    {
+        std::cout << num << " ";
+    }
+    std::cout << "\n";
+    PrintAlgorithmDuration();
 }
 
 
 int main()
 {
-    std::cout << "Hello World!\n";
+    std::cout << "Parallel Algorithims!\n";
+
+    // ForkJoin();
+
+    DivideAndConquer();
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
