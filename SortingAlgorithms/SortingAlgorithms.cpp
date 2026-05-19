@@ -8,7 +8,6 @@
 #include <chrono>
 
 std::chrono::high_resolution_clock::time_point gStartTime;
-
 void StartAlgorithm()
 {
     gStartTime = std::chrono::high_resolution_clock::now();
@@ -92,6 +91,37 @@ void ForkJoin()
     PrintAlgorithmDuration();
 }
 
+// QuickSort Code:
+void Swap(int& a, int& b)
+{
+    int t = a;
+    a = b;
+    b = t;
+}
+
+// Pivot Point
+int Partition(std::vector<int>& numbers, int start, int end)
+{
+    int pivot = numbers[end];
+    int i = start - 1;
+    for (int j = start; j < end; ++j)
+    {
+        if (numbers[j] < pivot)
+        {
+            ++i;
+            Swap(numbers[i], numbers[j]);
+        }
+    }
+    Swap(numbers[i + 1], numbers[end]);
+    
+    return i + 1;
+}
+
+
+void DivideAndConquer()
+{
+
+}
 
 
 int main()
