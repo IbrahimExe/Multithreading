@@ -128,6 +128,26 @@ void QuickSort(std::vector<int>& numbers, int start, int end)
     }
 }
 
+void ParallelQuickSort(std::vector<int>& numbers, int start, int end, int maxParallelSize)
+{
+    if (start < end)
+    {
+        int pivot = Partition(numbers, start, end);
+        if (end - start > maxParallelSize)
+        {
+            std::thread newThread(ParallelQuickSort, std::ref(numbers), pivot - 1, maxParallelSize);
+            ParallelQuickSort(numbers, pivot + 1, end, maxParallelSize);
+            newThread.join();
+        }
+        else
+        {
+            int pivot = Partition(numbers, start, end);
+            ParallelQuickSort(numbers, start, pivot - 1, maxParallelSize);
+            ParallelQuickSort(numbers, pivot + 1, end, maxParallelSize);
+        }
+    }
+}
+
 void DivideAndConquer()
 {
     // Generate 10000 random numbers from 1 - 1000
