@@ -121,6 +121,13 @@ void QuickSort(std::vector<int>& numbers, int start, int end)
 {
     if (start < end)
     {
+        // Slowing it down manually
+        /*int k = 1000;
+        while (k > 0)
+        {
+            --k;
+        }*/
+
         int pivot = Partition(numbers, start, end);
         
         QuickSort(numbers, start, pivot - 1);
@@ -132,16 +139,23 @@ void ParallelQuickSort(std::vector<int>& numbers, int start, int end, int maxPar
 {
     if (start < end)
     {
+        // Slowing it down manually
+        /*int k = 1000;
+        while (k > 0)
+        {
+            --k;
+        }*/
+
         int pivot = Partition(numbers, start, end);
         if (end - start > maxParallelSize)
         {
-            std::thread newThread(ParallelQuickSort, std::ref(numbers), pivot - 1, maxParallelSize);
-            ParallelQuickSort(numbers, pivot + 1, end, maxParallelSize);
-            newThread.join();
+            std::thread leftThread(ParallelQuickSort, std::ref(numbers), start, pivot - 1, maxParallelSize);
+            std::thread rightThread(ParallelQuickSort, std::ref(numbers), pivot + 1, end, maxParallelSize);
+            rightThread.join();
+            leftThread.join();
         }
         else
         {
-            int pivot = Partition(numbers, start, end);
             ParallelQuickSort(numbers, start, pivot - 1, maxParallelSize);
             ParallelQuickSort(numbers, pivot + 1, end, maxParallelSize);
         }
@@ -168,8 +182,21 @@ void DivideAndConquer()
         numbersP[i] = numbersS[i];
     }
 
+    // Quick Sort
     StartAlgorithm();
     QuickSort(numbersS, 0, maxGenerate - 1);
+    std::cout << " ";
+    for (int& num : numbersS)
+    {
+        std::cout << num << " ";
+    }
+    std::cout << "\n";
+    PrintAlgorithmDuration();
+
+    // Parallel Quick Sort
+    StartAlgorithm();
+    int maxParallelSize = 1000;
+    ParallelQuickSort(numbersS, 0, maxGenerate - 1, maxParallelSize);
     std::cout << " ";
     for (int& num : numbersS)
     {
