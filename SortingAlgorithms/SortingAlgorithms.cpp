@@ -6,6 +6,7 @@
 #include <future>
 #include <vector>
 #include <chrono>
+#include <queue>
 
 std::chrono::high_resolution_clock::time_point gStartTime;
 void StartAlgorithm()
@@ -206,6 +207,21 @@ void DivideAndConquer()
     PrintAlgorithmDuration();
 }
 
+std::vector<float> numbers;
+void GenerateNumbers()
+{
+
+}
+
+void GetMinMax()
+{
+
+}
+
+void ProducerConsumer()
+{
+
+}
 
 int main()
 {
