@@ -207,7 +207,45 @@ void DivideAndConquer()
     PrintAlgorithmDuration();
 }
 
-std::vector<float> numbers;
+class NumberBuffer
+{
+public:
+    NumberBuffer(int capacity)
+        : mCapacity(capacity)
+    {
+
+    }
+
+    void Push(float number)
+    {
+        std::unique_lock<std::mutex> lock(mMutex);
+        mNotFull.wait(lock, [this]() {return mNumbers.size() < mCapacity; });
+
+        mNumbers.push(number);
+
+        mNotEmpty.notify_one();
+    }
+
+    float Pop()
+    {
+        std::unique_lock<std::mutex> lock(mMutex);
+        mNotEmpty.wait(lock, [this]() {return !mNumbers.empty(); });
+
+        float number = mNumbers.front();
+        mNumbers.pop();
+
+        mNotFull.notify_one();
+        return number;
+    }
+
+private:
+    std::queue<float> mNumbers;
+    int mCapacity = 0;
+    std::mutex mMutex;
+    std::condition_variable mNotFull;
+    std::condition_variable mNotEmpty;
+};
+
 void GenerateNumbers()
 {
 
