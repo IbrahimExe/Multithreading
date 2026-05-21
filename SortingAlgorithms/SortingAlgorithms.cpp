@@ -7,6 +7,7 @@
 #include <vector>
 #include <chrono>
 #include <queue>
+#include <iomanip> // For std::setprecision
 
 std::chrono::high_resolution_clock::time_point gStartTime;
 void StartAlgorithm()
@@ -246,19 +247,58 @@ private:
     std::condition_variable mNotEmpty;
 };
 
-void GenerateNumbers()
+void GenerateNumbers(NumberBuffer& numbers, int maxNumbers)
 {
 
 }
 
-void GetMinMax()
+void GetMinMax(NumberBuffer& numbers, float& min, float& max)
 {
+    min = FLT_MAX;
+    max = FLT_MIN;
+
 
 }
 
 void ProducerConsumer()
 {
+    // Have a producer thread generate 10000 random float numbers
+    // Have 4 consumer threads obtain the numbers as they are available
+    // Consumers should store the min and the max numbers generated
+    // Print the min / max in each thread
+    // Once all complete, print the overall min / max values
 
+    std::cout << "Producer - Consumer:\n";
+    const int numberOfThreads = 4;
+    const int maxGenerate = 10000;
+    const int minNumber = 1;
+    const int maxNumber = 1000;
+
+    NumberBuffer numbers(100); // Buffer capacity of 100
+    std::vector<float>threadMins(numberOfThreads);
+    std::vector<float>threadMaxs(numberOfThreads);
+
+    std::thread producer(GenerateNumbers, std::ref(numbers), maxGenerate);
+    std::vector<std::thread> consumers;
+    for (int i = 0; i < numberOfThreads; ++i)
+    {
+        (void)consumers.emplace_back(GetMinMax, std::ref(numbers), std::ref(threadMins[i]), std::ref(threadMaxs[i]));
+    }
+
+    for (std::thread& consumer : consumers)
+    {
+        consumer.join();
+    }
+    producer.join();
+    float totalMin = FLT_MAX;
+    float totalMax = FLT_MIN;
+    for (int i = 0; i < numberOfThreads; ++i)
+    {
+        totalMin = std::min(totalMin, threadMins[i]);
+        totalMax = std::max(totalMax, threadMaxs[i]);
+    }
+
+    std::cout << std::setprecision(5) << "Min: " << totalMin << " - Max: " << totalMax << "\n";
 }
 
 int main()
