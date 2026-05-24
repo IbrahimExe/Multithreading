@@ -249,7 +249,11 @@ private:
 
 void GenerateNumbers(NumberBuffer& numbers, int maxNumbers)
 {
-
+    for (int i = 0; i < maxNumbers; ++i)
+    {
+        float number = 1.0f + (1001.0f * (static_cast<float>(rand()) / RAND_MAX));
+        numbers.Push(number);
+    }
 }
 
 void GetMinMax(NumberBuffer& numbers, float& min, float& max)
