@@ -1,4 +1,4 @@
-// SortingAlgorithms.cpp : This file contains the 'main' function. Program execution begins and ends there.
+﻿// SortingAlgorithms.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
 #include <iostream>
@@ -305,13 +305,122 @@ void ProducerConsumer()
     std::cout << std::setprecision(5) << "Min: " << totalMin << " - Max: " << totalMax << "\n";
 }
 
+class SafeQueue
+{
+public:
+    void Push(int value)
+    {
+        {
+            std::unique_lock<std::mutex> lk(mMutex);
+            mNumbers.push(value);
+        }
+        mNotEmpty.notify_one();
+    }
+    int Pop()
+    {
+        std::unique_lock<std::mutex> lk(mMutex);
+        mNotEmpty.wait(lk, [this]() { return !mNumbers.empty() || mFinished; });
+
+        // assume everything is positive
+        if (mNumbers.empty())
+        {
+            return -1;
+        }
+
+        int value = mNumbers.front();
+        mNumbers.pop();
+        return value;
+    }
+    void SetFinished()
+    {
+        {
+            std::lock_guard<std::mutex> lk(mMutex);
+            mFinished = true;
+        }
+        mNotEmpty.notify_all();
+    }
+private:
+    std::queue<int> mNumbers;
+    std::mutex mMutex;
+    std::condition_variable mNotEmpty;
+    bool mFinished = false;
+};
+
+void Part1GenerateNumbers(SafeQueue& numbers, int maxNumbers)
+{
+    for (int i = 0; i < maxNumbers; ++i)
+    {
+        int number = 1 + (rand() % 10);
+        numbers.Push(number);
+    }
+    numbers.SetFinished();
+    std::cout << "Stage 1: Complete\n";
+}
+void Part2SumUpNumberIndices(SafeQueue& numbers, SafeQueue& processedNumbers)
+{
+    while (true)
+    {
+        int number = numbers.Pop();
+        if (number < 0)
+        {
+            break;
+        }
+        int total = 0;
+        for (int i = 1; i < number; ++i)
+        {
+            total += i;
+        }
+        processedNumbers.Push(total);
+    }
+    processedNumbers.SetFinished();
+    std::cout << "Stage 2: Complete\n";
+}
+void Part3PrintResults(SafeQueue& processedNumbers)
+{
+    while (true)
+    {
+        int number = processedNumbers.Pop();
+        if (number < 0)
+        {
+            break;
+        }
+        std::cout << "Processed: " << number << "\n";
+    }
+
+    std::cout << "Stage 3: Complete\n";
+}
+
+void Pipeline()
+{
+    // Excercise 4
+    // Create three functions​
+    // One generates a random 100 int numbers from 1 - 10​
+    // One takes those numbers and adds sums up the numbers in the value​
+    // (eg: if first one is 3, add 1 + 2 + 3)​
+    // One prints the results from the second one
+    std::cout << "Pipeline:\n";
+    SafeQueue numbers;
+    SafeQueue processedNumbers;
+    std::thread stage1(Part1GenerateNumbers, std::ref(numbers), 1000);
+    std::thread stage2(Part2SumUpNumberIndices, std::ref(numbers), std::ref(processedNumbers));
+    std::thread stage3(Part3PrintResults, std::ref(processedNumbers));
+
+    stage3.join();
+    stage2.join();
+    stage1.join();
+}
+
 int main()
 {
     std::cout << "Parallel Algorithims!\n";
 
     // ForkJoin();
 
-    DivideAndConquer();
+    // DivideAndConquer();
+
+    // ProducerConsumer();
+
+    Pipeline();
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
