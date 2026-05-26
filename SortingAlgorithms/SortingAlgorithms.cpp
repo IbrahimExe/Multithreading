@@ -8,6 +8,7 @@
 #include <chrono>
 #include <queue>
 #include <iomanip> // For std::setprecision
+#include <stack>
 
 std::chrono::high_resolution_clock::time_point gStartTime;
 void StartAlgorithm()
@@ -410,6 +411,147 @@ void Pipeline()
     stage1.join();
 }
 
+std::mutex gPrintMutex;
+// Queue for workers to Add/ Remove/ Steal from other workers
+class WorkQueue
+{
+public:
+    WorkQueue()
+    {
+
+    }
+
+    WorkQueue(const WorkQueue& copy)
+    {
+        mTasks = copy.mTasks;
+    }
+
+    void Push(std::function<void()> task)
+    {
+        std::lock_guard<std::mutex> lock(mMutex);
+        mTasks.push_front(task);
+    }
+
+    bool Pop(std::function<void()>& task)
+    {
+        std::lock_guard<std::mutex> lock(mMutex);
+        if (mTasks.empty())
+        {
+            return false;
+        }
+        task = std::move(mTasks.front());
+        mTasks.pop_front();
+        return true;
+    }
+
+    bool Empty()
+    {
+        std::lock_guard<std::mutex> lock(mMutex);
+        return mTasks.empty();
+    }
+
+private:
+    std::deque<std::function<void()>> mTasks;
+    std::mutex mMutex;
+};
+
+// Task Queue to add tasks to take from
+class WorkerTaskPool
+{
+public:
+    WorkerTaskPool(int capacity)
+    {
+        mQueues.resize(capacity);
+        for (int i = 0; i < capacity; ++i)
+        {
+            mWorkers.emplace_back(&WorkerTaskPool::WorkerThread, this, i);
+        }
+    }
+    ~WorkerTaskPool()
+    {
+        FinishTasks();
+    }
+
+    void FinishTasks()
+    {
+        if (mDone)
+        {
+            return;
+        }
+
+        mDone = true;
+        for (auto& workerThread : mWorkers)
+        {
+            if (workerThread.joinable())
+            {
+                workerThread.join();
+            }
+        }
+    }
+
+    void CreateTask(std::function<void()> task)
+    {
+        int index = rand() % mQueues.size();
+        mQueues[index].Push(std::move(task));
+    }
+
+private:
+    std::vector<std::thread> mWorkers;
+    std::vector<WorkQueue> mQueues;
+    std::atomic<bool> mDone;
+
+    void WorkerThread(int index)
+    {
+        while (!mDone)
+        {
+            std::function<void()> task;
+            if (mQueues[index].Pop(task))
+            {
+                task();
+            }
+            else
+            {
+                // Try to steal from another worker
+                bool stolen = false;
+                for (int i = 0; i < mQueues.size(); ++i)
+                {
+                    if (i != index && mQueues[i].Pop(task))
+                    {
+                        task();
+                        stolen = true;
+                        std::lock_guard<std::mutex> lock(gPrintMutex);
+                        std::cout << "Task STOLEN from " << i << " by " << index << "\n";
+                        break;
+                    }
+                }
+                if (!stolen)
+                {
+                    // No work found, sleep
+                    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                }
+            }
+        }
+    }
+};
+
+void WorkerSteal()
+{
+    WorkerTaskPool taskPool(4);
+    for (int i = 0; i < 40; ++i)
+    {
+        taskPool.CreateTask([i]() {
+            int workTime = (rand() % 450) + 50;
+            std::this_thread::sleep_for(std::chrono::milliseconds(workTime));
+            std::lock_guard<std::mutex> lock(gPrintMutex);
+            std::cout << "Task (" << i << ") completed by worker " << std::this_thread::get_id() << "\n";
+            });
+    }
+
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    taskPool.FinishTasks();
+    std::cout << "All Tasks Complete\n";
+}
+
 int main()
 {
     std::cout << "Parallel Algorithims!\n";
@@ -420,7 +562,9 @@ int main()
 
     // ProducerConsumer();
 
-    Pipeline();
+    // Pipeline();
+
+    WorkerSteal();
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
