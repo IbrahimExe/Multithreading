@@ -552,6 +552,52 @@ void WorkerSteal()
     std::cout << "All Tasks Complete\n";
 }
 
+void MapChuck(const std::vector<std::string>& words, int start, int end, int& result, std::mutex& mtx)
+{
+    int sumLocal = 0;
+    for (int i = start; i < end; ++i)
+    {
+        for (int c = 0; c < words[i].size(); ++c)
+        {
+            ++sumLocal;
+        }
+    }
+
+    std::lock_guard<std::mutex> lock(mtx);
+    result += sumLocal;
+}
+
+int WordLenghtSum(const std::vector<std::string>& words, int numOfThreads)
+{
+    int totalSum = 0;
+    std::mutex mutex;
+    std::vector<std::thread> threads;
+
+    int chunkSize = (words.size() + numOfThreads - 1) / numOfThreads; // Even distribution of work among threads
+    for (int i = 0; i < numOfThreads; ++i)
+    {
+        int start = i * chunkSize;
+        int end = std::min(start + chunkSize, (int)words.size());
+        threads.emplace_back(MapChuck, std::ref(words), start, end, std::ref(totalSum), std::ref(mutex));
+    }
+
+    for (auto& t : threads)
+    {
+        if (t.joinable())
+        {
+            t.join();
+        }
+    }
+    return totalSum;
+}
+
+void MapReducing()
+{
+    std::vector<std::string> words =
+    {
+
+    };
+
 int main()
 {
     std::cout << "Parallel Algorithims!\n";
