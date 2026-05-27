@@ -595,8 +595,22 @@ void MapReducing()
 {
     std::vector<std::string> words =
     {
-
+        "cat", "dog", "party", "music", "laughing", "computer", "science", "bachelor", "intelligent", "spelling", "bad", "sheep",
+        "table", "candy", "donut", "pizza", "sushi", "coffee", "laptop", "cellphone", "cellophane", "anime", "movies", "volleyball"
     };
+
+    StartAlgorithm();
+    int numThreads = 1;
+    int totalSum = WordLenghtSum(words, numThreads);
+    std::cout << "Total Characters: " << totalSum << " in " << words.size() << " words.\n";
+    PrintAlgorithmDuration();
+
+    StartAlgorithm();
+    numThreads = 3;
+    totalSum = WordLenghtSum(words, numThreads);
+    std::cout << "Total Characters: " << totalSum << " in " << words.size() << " words.\n";
+    PrintAlgorithmDuration();
+}
 
 int main()
 {
@@ -610,7 +624,9 @@ int main()
 
     // Pipeline();
 
-    WorkerSteal();
+    // WorkerSteal();
+
+    MapReducing();
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
