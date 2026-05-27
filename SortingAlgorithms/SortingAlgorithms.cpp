@@ -666,7 +666,39 @@ void WorkerDoWork(TaskQueue& tasks, int id)
 
 void MasterWorker()
 {
+    StartAlgorithm();
+    TaskQueue tasks;
 
+    // Create Workers
+    int numWorkers = 3;
+    std::vector<std::thread> workers;
+    for (int i = 0; i < numWorkers; ++i)
+    {
+        workers.emplace_back(WorkerDoWork, std::ref(tasks), i);
+    }
+
+    // Master Creates Tasks
+    for (int i = 0; i < 40; ++i)
+    {
+        tasks.Push([](int id) {
+            int workTime = (rand() % 200) + 50; // Simulate work time between 50ms & 250ms
+            std::this_thread::sleep_for(std::chrono::milliseconds(workTime));
+            std::lock_guard<std::mutex> lock(gPrintMutex);
+            std::cout << "Work is done by worker ( " << id << " )\n";
+            });
+    }
+    tasks.Stop();
+
+    for (auto& w : workers)
+    {
+        if (w.joinable())
+        {
+            w.join();
+        }
+    }
+
+    std::cout << "All tasks are complete!\n";
+    PrintAlgorithmDuration();
 }
 
 
