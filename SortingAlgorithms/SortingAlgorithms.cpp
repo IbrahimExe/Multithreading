@@ -612,6 +612,64 @@ void MapReducing()
     PrintAlgorithmDuration();
 }
 
+class TaskQueue
+{
+public:
+    void Push(std::function<void(int)> task)
+    {
+        {
+            std::lock_guard<std::mutex> lock(mMutex);
+            mTasks.push(task);
+        }
+        mCV.notify_one();
+    }
+
+    bool Pop(std::function<void(int)>& task)
+    {
+        std::unique_lock<std::mutex> lock(mMutex);
+        mCV.wait(lock, [this] { return mStop || !mTasks.empty(); });
+
+        if (mStop && mTasks.empty())
+        {
+            return false;
+        }
+
+        task = std::move(mTasks.front());
+        mTasks.pop();
+        return true;
+    }
+
+    void Stop()
+    {
+        {
+            std::lock_guard<std::mutex> lock(mMutex);
+            mStop = true;
+        }
+        mCV.notify_all();
+    }
+
+private:
+    std::queue<std::function<void(int)>> mTasks;
+    std::mutex mMutex;
+    std::condition_variable mCV;
+    bool mStop = false;
+};
+
+void WorkerDoWork(TaskQueue& tasks, int id)
+{
+    std::function<void(int)> task;
+    while (tasks.Pop(task))
+    {
+        task(id);
+    }
+}
+
+void MasterWorker()
+{
+
+}
+
+
 int main()
 {
     std::cout << "Parallel Algorithims!\n";
