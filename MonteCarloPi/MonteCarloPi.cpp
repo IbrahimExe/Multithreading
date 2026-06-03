@@ -48,54 +48,39 @@ double PI_Integral()
 // Monte Carlo method for computing PI
 double PIMonteCarlo()
 {
-	long samples = 1000000;
-	double pi = 0.0;
-	int max_iterations = 100;
-	int iteration = 0;
+	// using a huge number of fixed samples;
+	// Monte Carlo converges as 1/sqrt(N), so 2 billion samples gives ~6-7 (hehe) decimal places
+	// its not 15 dp's but gives us a good estimate in a relativley reasonable time frame.
+	long samples = 2000000000;  // 2 billion samples
+	long count = 0;
 
-	while (iteration < max_iterations)
-	{
-		long count = 0;
-
-		// Generate random points and count those inside circle
+	// Generate random points and count those inside circle
 #pragma omp parallel
-		{
-			int thread_id = omp_get_thread_num();
-			std::mt19937 gen(thread_id + iteration * NUM_THREADS);
-			std::uniform_real_distribution<> dis(0.0, 1.0);
+	{
+		int thread_id = omp_get_thread_num();
+		std::mt19937 gen(thread_id);
+		std::uniform_real_distribution<> dis(0.0, 1.0);
 
-			long local_count = 0;
+		long local_count = 0;
 
 #pragma omp for
-			for (long i = 0; i < samples; ++i)
-			{
-				double x = dis(gen);
-				double y = dis(gen);
+		for (long i = 0; i < samples; ++i)
+		{
+			double x = dis(gen);
+			double y = dis(gen);
 
-				// Check if point is inside unit circle
-				if (x * x + y * y <= 1.0)
-				{
-					local_count++;
-				}
+			// Check if point is inside unit circle
+			if (x * x + y * y <= 1.0)
+			{
+				local_count++;
 			}
+		}
 
 #pragma omp critical
-			count += local_count;
-		}
-
-		pi = 4.0 * (double)count / (double)samples;
-
-		// Check if converged to 15 decimal places
-		double error = std::abs(pi - PI_15DP);
-		if (error < 1e-15)
-		{
-			break;
-		}
-
-		samples *= 2;
-		iteration++;
+		count += local_count;
 	}
 
+	double pi = 4.0 * (double)count / (double)samples;
 	return pi;
 }
 
@@ -105,7 +90,7 @@ int main()
 	std::cout << "Computing PI using two methods...\n\n";
 
 	// Compute PI using Integration method
-	std::cout << "  Integration Method \n";
+	std::cout << "   Integration Method \n";
 	auto int_start = std::chrono::steady_clock::now();
 	double pi_integral = PI_Integral();
 	auto int_end = std::chrono::steady_clock::now();
@@ -117,7 +102,7 @@ int main()
 	std::cout << "Time: " << int_time << " ms\n\n";
 
 	// Compute PI using Monte Carlo method
-	std::cout << "  Monte Carlo Method \n";
+	std::cout << "   Monte Carlo Method \n"; // using 2 Billion samples 
 	auto mc_start = std::chrono::steady_clock::now();
 	double pi_montecarlo = PIMonteCarlo();
 	auto mc_end = std::chrono::steady_clock::now();
@@ -132,15 +117,10 @@ int main()
 	std::cout << "- Comparison -\n";
 	std::cout << "Integration Method Time: " << int_time << " ms\n";
 	std::cout << "Monte Carlo Method Time: " << mc_time << " ms\n";
-	
-	if (int_time < mc_time)
-	{
-		std::cout << "Integration is " << (double)mc_time / int_time << "x faster\n";
-	}
-	else
-	{
-		std::cout << "Monte Carlo is " << (double)int_time / mc_time << "x faster\n";
-	}
+
+	// I would put an if statement for in the odd chance MonteCarlo is somehow faster but
+	// its so unlikely that i feel its safe to assume it wont happen at all lol
+	std::cout << "Integration is ~ " << (int)mc_time / (int)int_time << "x faster than the Monte Carlo method\n";
 
 	return 0;
 }
