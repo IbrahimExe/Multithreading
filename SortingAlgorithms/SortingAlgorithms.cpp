@@ -556,7 +556,7 @@ void WorkerSteal()
     std::cout << "All Tasks Complete\n";
 }
 
-void MapChuck(const std::vector<std::string>& words, int start, int end, int& result, std::mutex& mtx)
+void MapChunk(const std::vector<std::string>& words, int start, int end, int& result, std::mutex& mtx)
 {
     int sumLocal = 0;
     for (int i = start; i < end; ++i)
@@ -582,7 +582,7 @@ int WordLenghtSum(const std::vector<std::string>& words, int numOfThreads)
     {
         int start = i * chunkSize;
         int end = std::min(start + chunkSize, (int)words.size());
-        threads.emplace_back(MapChuck, std::ref(words), start, end, std::ref(totalSum), std::ref(mutex));
+        threads.emplace_back(MapChunk, std::ref(words), start, end, std::ref(totalSum), std::ref(mutex));
     }
 
     for (auto& t : threads)
@@ -714,57 +714,57 @@ void PrintRange(const std::vector<uint32_t>& numbers, int start, int end)
     std::cout << "\n";
 }
 
-void StdExecution()
-{
-    // Create a vector of 10000 random numbers from 1 - 1000​
-    // Using parallel algorithms, sort them from highest to lowest​
-    // Add a random number between 1 - 40 to each​
-    // Sort them again from lowest to highest
-
-    int maxNumbers = 100000;
-    int minVal = 1;
-    int maxVal = 1000;
-    int seed = 47;
-
-    srand(seed);
-    std::vector<uint32_t> numbers;
-    for (int i = 0; i < maxNumbers; ++i)
-    {
-        int value = (rand() % maxVal) + minVal;
-        numbers.push_back(value);
-    }
-
-    StartAlgorithm();
-    std::cout << "Done In Sequence:\n";
-    PrintRange(numbers, 0, 20);
-    std::sort(std::execution::seq, numbers.begin(), numbers.end(), std::greater<uint32_t>());
-    PrintRange(numbers, 0, 20);
-    std::transform(std::execution::seq, numbers.begin(), numbers.end(), numbers.begin(), [](int n) { return n + (rand() % 40) + 1; });
-    PrintRange(numbers, 0, 20);
-    std::sort(std::execution::seq, numbers.begin(), numbers.end());
-    PrintRange(numbers, 0, 20);
-    PrintAlgorithmDuration();
-    std::cout << "\n\n";
-
-    srand(seed);
-    numbers.clear();
-    for (int i = 0; i < maxNumbers; ++i)
-    {
-        int value = (rand() % maxVal) + minVal;
-        numbers.push_back(value);
-    }
-
-    StartAlgorithm();
-    std::cout << "Done In Parallel:\n";
-    PrintRange(numbers, 0, 20);
-    std::sort(std::execution::par, numbers.begin(), numbers.end(), std::greater<uint32_t>());
-    PrintRange(numbers, 0, 20);
-    std::transform(std::execution::par, numbers.begin(), numbers.end(), numbers.begin(), [](int n) { return n + (rand() % 40) + 1; });
-    PrintRange(numbers, 0, 20);
-    std::sort(std::execution::par, numbers.begin(), numbers.end());
-    PrintRange(numbers, 0, 20);
-    PrintAlgorithmDuration();
-}
+//void StdExecution()
+//{
+//    // Create a vector of 10000 random numbers from 1 - 1000​
+//    // Using parallel algorithms, sort them from highest to lowest​
+//    // Add a random number between 1 - 40 to each​
+//    // Sort them again from lowest to highest
+//
+//    int maxNumbers = 100000;
+//    int minVal = 1;
+//    int maxVal = 1000;
+//    int seed = 47;
+//
+//    srand(seed);
+//    std::vector<uint32_t> numbers;
+//    for (int i = 0; i < maxNumbers; ++i)
+//    {
+//        int value = (rand() % maxVal) + minVal;
+//        numbers.push_back(value);
+//    }
+//
+//    StartAlgorithm();
+//    std::cout << "Done In Sequence:\n";
+//    PrintRange(numbers, 0, 20);
+//    std::sort(std::execution::par, numbers.begin(), numbers.end(), std::greater<uint32_t>());
+//    PrintRange(numbers, 0, 20);
+//    std::transform(std::execution::seq, numbers.begin(), numbers.end(), numbers.begin(), [](int n) { return n + (rand() % 40) + 1; });
+//    PrintRange(numbers, 0, 20);
+//    std::sort(std::execution::seq, numbers.begin(), numbers.end());
+//    PrintRange(numbers, 0, 20);
+//    PrintAlgorithmDuration();
+//    std::cout << "\n\n";
+//
+//    srand(seed);
+//    numbers.clear();
+//    for (int i = 0; i < maxNumbers; ++i)
+//    {
+//        int value = (rand() % maxVal) + minVal;
+//        numbers.push_back(value);
+//    }
+//
+//    StartAlgorithm();
+//    std::cout << "Done In Parallel:\n";
+//    PrintRange(numbers, 0, 20);
+//    std::sort(std::execution::par, numbers.begin(), numbers.end(), std::greater<uint32_t>());
+//    PrintRange(numbers, 0, 20);
+//    std::transform(std::execution::par, numbers.begin(), numbers.end(), numbers.begin(), [](int n) { return n + (rand() % 40) + 1; });
+//    PrintRange(numbers, 0, 20);
+//    std::sort(std::execution::par, numbers.begin(), numbers.end());
+//    PrintRange(numbers, 0, 20);
+//    PrintAlgorithmDuration();
+//}
 
 
 int main()
@@ -785,7 +785,7 @@ int main()
 
     // MasterWorker();
 
-    StdExecution();
+    // StdExecution();
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{b68c4ee3-080f-48fb-9fb1-b5c0d11c533a}</ProjectGuid>
-    <RootNamespace>SortingAlgorithms</RootNamespace>
+    <ProjectGuid>{e5845709-35f9-4096-a015-543d6dd62699}</ProjectGuid>
+    <RootNamespace>MonteCarloPi</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -131,7 +131,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="SortingAlgorithms.cpp" />
+    <ClCompile Include="MonteCarloPi.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

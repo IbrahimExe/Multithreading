@@ -13,6 +13,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Midterm", "Midterm\Midterm.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SortingAlgorithms", "SortingAlgorithms\SortingAlgorithms.vcxproj", "{B68C4EE3-080F-48FB-9FB1-B5C0D11C533A}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MonteCarloPi", "MonteCarloPi\MonteCarloPi.vcxproj", "{E5845709-35F9-4096-A015-543D6DD62699}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -61,6 +63,14 @@ Global
 		{B68C4EE3-080F-48FB-9FB1-B5C0D11C533A}.Release|x64.Build.0 = Release|x64
 		{B68C4EE3-080F-48FB-9FB1-B5C0D11C533A}.Release|x86.ActiveCfg = Release|Win32
 		{B68C4EE3-080F-48FB-9FB1-B5C0D11C533A}.Release|x86.Build.0 = Release|Win32
+		{E5845709-35F9-4096-A015-543D6DD62699}.Debug|x64.ActiveCfg = Debug|x64
+		{E5845709-35F9-4096-A015-543D6DD62699}.Debug|x64.Build.0 = Debug|x64
+		{E5845709-35F9-4096-A015-543D6DD62699}.Debug|x86.ActiveCfg = Debug|Win32
+		{E5845709-35F9-4096-A015-543D6DD62699}.Debug|x86.Build.0 = Debug|Win32
+		{E5845709-35F9-4096-A015-543D6DD62699}.Release|x64.ActiveCfg = Release|x64
+		{E5845709-35F9-4096-A015-543D6DD62699}.Release|x64.Build.0 = Release|x64
+		{E5845709-35F9-4096-A015-543D6DD62699}.Release|x86.ActiveCfg = Release|Win32
+		{E5845709-35F9-4096-A015-543D6DD62699}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
