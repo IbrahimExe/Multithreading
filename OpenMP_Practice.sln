@@ -15,6 +15,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SortingAlgorithms", "Sortin
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MonteCarloPi", "MonteCarloPi\MonteCarloPi.vcxproj", "{E5845709-35F9-4096-A015-543D6DD62699}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ParallelMergeSort", "ParallelMergeSort\ParallelMergeSort.vcxproj", "{8F407593-D8B4-4F75-9F79-335FC5FFED84}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -71,6 +73,14 @@ Global
 		{E5845709-35F9-4096-A015-543D6DD62699}.Release|x64.Build.0 = Release|x64
 		{E5845709-35F9-4096-A015-543D6DD62699}.Release|x86.ActiveCfg = Release|Win32
 		{E5845709-35F9-4096-A015-543D6DD62699}.Release|x86.Build.0 = Release|Win32
+		{8F407593-D8B4-4F75-9F79-335FC5FFED84}.Debug|x64.ActiveCfg = Debug|x64
+		{8F407593-D8B4-4F75-9F79-335FC5FFED84}.Debug|x64.Build.0 = Debug|x64
+		{8F407593-D8B4-4F75-9F79-335FC5FFED84}.Debug|x86.ActiveCfg = Debug|Win32
+		{8F407593-D8B4-4F75-9F79-335FC5FFED84}.Debug|x86.Build.0 = Debug|Win32
+		{8F407593-D8B4-4F75-9F79-335FC5FFED84}.Release|x64.ActiveCfg = Release|x64
+		{8F407593-D8B4-4F75-9F79-335FC5FFED84}.Release|x64.Build.0 = Release|x64
+		{8F407593-D8B4-4F75-9F79-335FC5FFED84}.Release|x86.ActiveCfg = Release|Win32
+		{8F407593-D8B4-4F75-9F79-335FC5FFED84}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
